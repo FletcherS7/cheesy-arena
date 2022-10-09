@@ -152,7 +152,7 @@ var handleArenaStatus = function(data) {
       $("#startMatch").prop("disabled", !data.CanStartMatch);
       $("#abortMatch").prop("disabled", true);
       $("#signalVolunteers").prop("disabled", true);
-      $("#signalReset").prop("disabled", false);
+      $("#signalReset").prop("disabled", true);
       $("#fieldResetRadio").prop("disabled", false);
       $("#commitResults").prop("disabled", true);
       $("#discardResults").prop("disabled", true);
@@ -200,7 +200,7 @@ var handleArenaStatus = function(data) {
       $("#startMatch").prop("disabled", true);
       $("#abortMatch").prop("disabled", true);
       $("#signalVolunteers").prop("disabled", true);
-      $("#signalReset").prop("disabled", false);
+      $("#signalReset").prop("disabled", true);
       $("#fieldResetRadio").prop("disabled", false);
       $("#commitResults").prop("disabled", true);
       $("#discardResults").prop("disabled", true);
