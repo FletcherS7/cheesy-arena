@@ -872,6 +872,7 @@ func (arena *Arena) handlePlcOutput() {
 	case PausePeriod:
 		fallthrough
 	case TeleopPeriod:
+		arena.Plc.SetStackBuzzer(false)
 		arena.Plc.SetStackLights(false, false, false, true)
 	}
 }
