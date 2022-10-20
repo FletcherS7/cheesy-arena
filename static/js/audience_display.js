@@ -33,7 +33,7 @@ const scoreMid = "135px";
 const scoreOut = "255px";
 const scoreFieldsOut = "40px";
 const scoreLogoTop = "-350px";
-const bracketLogoTop = "-780px";
+const bracketLogoTop = "-80vh";
 const bracketLogoScale = 0.75;
 
 // Handles a websocket message to change which screen is displayed.
