@@ -4,12 +4,13 @@
 package web
 
 import (
+	"testing"
+	"time"
+
 	"github.com/Team254/cheesy-arena/game"
 	"github.com/Team254/cheesy-arena/model"
 	"github.com/Team254/cheesy-arena/tournament"
 	"github.com/stretchr/testify/assert"
-	"testing"
-	"time"
 )
 
 func TestRankingsCsvReport(t *testing.T) {
@@ -126,7 +127,7 @@ func TestWpaKeysCsvReport(t *testing.T) {
 	recorder := web.getHttpResponse("/reports/csv/wpa_keys")
 	assert.Equal(t, 200, recorder.Code)
 	assert.Equal(t, "text/csv", recorder.Header()["Content-Type"][0])
-	assert.Equal(t, "attachment; filename=wpa_keys.csv", recorder.Header()["Content-Disposition"][0])
+	assert.Equal(t, "attachment; filename=Untitled Event.wpa_keys.csv", recorder.Header()["Content-Disposition"][0])
 	assert.Equal(t, "254,12345678\r\n1114,9876543210\r\n", recorder.Body.String())
 }
 
