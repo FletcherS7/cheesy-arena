@@ -151,7 +151,7 @@ html {
 }
 #matchTime {
   position: relative;
-  top: 1px;
+  top: 2px;
   height: 60px;
   color: #222;
   font-family: "FuturaLTBold";
@@ -523,7 +523,7 @@ html {
 }
 #allianceSelectionTable img {
   width: 6em;
-  margin: -0.2em;
+  margin: 0.2em;
 }
 #allianceSelectionTable tr:nth-child(even) {
   background-color: #ccc;
