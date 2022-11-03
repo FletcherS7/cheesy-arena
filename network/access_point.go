@@ -43,6 +43,7 @@ type AccessPoint struct {
 type TeamWifiStatus struct {
 	TeamId      int
 	RadioLinked bool
+	MBits       float64
 }
 
 type sshOutput struct {
@@ -86,6 +87,7 @@ func (ap *AccessPoint) Run() {
 			}
 		case <-time.After(time.Second * accessPointPollPeriodSec):
 			ap.updateTeamWifiStatuses()
+			ap.updateTeamWifiBTU()
 		}
 	}
 }
@@ -353,4 +355,38 @@ func decodeWifiInfo(wifiInfo string, statuses []TeamWifiStatus) error {
 	}
 
 	return nil
+}
+func (ap *AccessPoint) updateTeamWifiBTU() error {
+	if !ap.networkSecurityEnabled {
+		return nil
+	}
+	infWifi := []string{"0", "0-1", "0-2", "0-3", "0-4", "0-5"}
+	for i := range ap.TeamWifiStatuses {
+
+		output, err := ap.runCommand(fmt.Sprintf("luci-bwc -i wlan%s", infWifi[i]))
+		if err == nil {
+			ap.TeamWifiStatuses[i].MBits, err = parseBtu(output)
+		}
+
+		if err != nil {
+			return fmt.Errorf("Error getting wifi info from AP: %v", err)
+		}
+	}
+	return nil
+}
+func parseBtu(response string) (float64, error) {
+	mBits := 0.0
+	lines := strings.Split(response, "/n")
+	if len(lines) >= 6 {
+		fiveCnt := strings.Split(lines[len(lines)-5], ", ")
+		lastCnt := strings.Split(lines[len(lines)-1], ", ")
+		log.Println(fiveCnt)
+		log.Println(lastCnt)
+		rXBytes, _ := strconv.Atoi(lastCnt[2])
+		tXBytes, _ := strconv.Atoi(lastCnt[4])
+		rXBytesOld, _ := strconv.Atoi(fiveCnt[2])
+		tXBytesOld, _ := strconv.Atoi(fiveCnt[4])
+		mBits = float64(rXBytes-rXBytesOld+tXBytes-tXBytesOld) / 12500.0 / 5.0
+	}
+	return mBits, nil
 }

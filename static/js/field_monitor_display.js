@@ -95,9 +95,9 @@ var handleArenaStatus = function(data) {
       } else {
         teamRobotElement.text(dsConn.BatteryVoltage.toFixed(1) + "V");
       }
-      console.log(dsConn.Bandwidth);
-      if (dsConn.Bandwidth > 0.01) {
-        teamBandwidthElement.text(dsConn.Bandwidth.toFixed(1));
+      console.log(wifiStatus.MBits);
+      if (wifiStatus.MBits > 0.01) {
+        teamBandwidthElement.text(wifiStatus.MBits.toFixed(1));
         teamBandwidthElement.attr("data-status-ok", true);
       } else {
         teamBandwidthElement.text("-");
