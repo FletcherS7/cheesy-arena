@@ -491,7 +491,7 @@ func (arena *Arena) Update() {
 				enabled = true
 			}
 		}
-	    arena.FieldReset = false
+		arena.FieldReset = false
 	case PausePeriod:
 		auto = false
 		enabled = false
