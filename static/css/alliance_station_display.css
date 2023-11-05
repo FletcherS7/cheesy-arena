@@ -14,7 +14,7 @@ body {
   color: #fff;
 }
 body[data-mode=logo] {
-  background-color: #000;
+  background-color: #FFF;
 }
 body[data-mode=fieldReset] {
   background-color: #0a3;
