@@ -6,9 +6,9 @@
 package game
 
 type Foul struct {
-	RuleId         int
-	TeamId         int
-	TimeInMatchSec float64
+	IsTechnical bool
+	TeamId      int
+	RuleId      int
 }
 
 // Returns the rule for which the foul was assigned.
@@ -18,12 +18,9 @@ func (foul *Foul) Rule() *Rule {
 
 // Returns the number of points that the foul adds to the opposing alliance's score.
 func (foul *Foul) PointValue() int {
-	if foul.Rule() == nil || foul.Rule().IsRankingPoint {
-		return 0
-	}
-	if foul.Rule().IsTechnical {
-		return 8
+	if foul.IsTechnical {
+		return 5
 	} else {
-		return 4
+		return 2
 	}
 }

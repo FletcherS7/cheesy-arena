@@ -15,7 +15,7 @@ import (
 
 // Determines the rankings from the stored match results, and saves them to the database.
 func CalculateRankings(database *model.Database, preservePreviousRank bool) (game.Rankings, error) {
-	matches, err := database.GetMatchesByType("qualification")
+	matches, err := database.GetMatchesByType(model.Qualification, false)
 	if err != nil {
 		return nil, err
 	}
@@ -78,7 +78,7 @@ func CalculateRankings(database *model.Database, preservePreviousRank bool) (gam
 }
 
 // Checks all the match results for yellow and red cards, and updates the team model accordingly.
-func CalculateTeamCards(database *model.Database, matchType string) error {
+func CalculateTeamCards(database *model.Database, matchType model.MatchType) error {
 	teams, err := database.GetAllTeams()
 	if err != nil {
 		return err
@@ -89,7 +89,7 @@ func CalculateTeamCards(database *model.Database, matchType string) error {
 		teamsMap[strconv.Itoa(team.Id)] = team
 	}
 
-	matches, err := database.GetMatchesByType(matchType)
+	matches, err := database.GetMatchesByType(matchType, false)
 	if err != nil {
 		return err
 	}
@@ -107,13 +107,13 @@ func CalculateTeamCards(database *model.Database, matchType string) error {
 
 		// Mark the team as having a yellow card if they got either a yellow or red in a previous match.
 		for teamId, card := range matchResult.RedCards {
-			if team, ok := teamsMap[teamId]; ok && card != "" {
+			if team, ok := teamsMap[teamId]; ok && (card == "red" || card == "yellow") {
 				team.YellowCard = true
 				teamsMap[teamId] = team
 			}
 		}
 		for teamId, card := range matchResult.BlueCards {
-			if team, ok := teamsMap[teamId]; ok && card != "" {
+			if team, ok := teamsMap[teamId]; ok && (card == "red" || card == "yellow") {
 				team.YellowCard = true
 				teamsMap[teamId] = team
 			}
@@ -149,7 +149,7 @@ func addMatchResultToRankings(
 		cards = matchResult.BlueCards
 	}
 	disqualified := false
-	if card, ok := cards[strconv.Itoa(teamId)]; ok && card == "red" {
+	if card, ok := cards[strconv.Itoa(teamId)]; ok && (card == "red" || card == "dq") {
 		disqualified = true
 	}
 

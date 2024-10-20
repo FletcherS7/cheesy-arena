@@ -14,8 +14,8 @@ import (
 )
 
 const (
-	numNonElimMatchesToShow = 5
-	numElimMatchesToShow    = 4
+	numNonPlayoffMatchesToShow = 5
+	numPlayoffMatchesToShow    = 4
 )
 
 // Renders the queueing display that shows upcoming matches and timing information.
@@ -24,15 +24,35 @@ func (web *Web) queueingDisplayHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	matches, err := web.arena.Database.GetMatchesByType(web.arena.CurrentMatch.Type)
+	template, err := web.parseFiles("templates/queueing_display.html")
 	if err != nil {
 		handleWebErr(w, err)
 		return
 	}
 
-	numMatchesToShow := numNonElimMatchesToShow
-	if web.arena.CurrentMatch.Type == "elimination" {
-		numMatchesToShow = numElimMatchesToShow
+	data := struct {
+		*model.EventSettings
+	}{
+		web.arena.EventSettings,
+	}
+	err = template.ExecuteTemplate(w, "queueing_display.html", data)
+	if err != nil {
+		handleWebErr(w, err)
+		return
+	}
+}
+
+// Renders a partial template containing the list of matches.
+func (web *Web) queueingDisplayMatchLoadHandler(w http.ResponseWriter, r *http.Request) {
+	matches, err := web.arena.Database.GetMatchesByType(web.arena.CurrentMatch.Type, false)
+	if err != nil {
+		handleWebErr(w, err)
+		return
+	}
+
+	numMatchesToShow := numNonPlayoffMatchesToShow
+	if web.arena.CurrentMatch.Type == model.Playoff {
+		numMatchesToShow = numPlayoffMatchesToShow
 	}
 
 	var upcomingMatches []model.Match
@@ -42,7 +62,7 @@ func (web *Web) queueingDisplayHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	for i, match := range matches {
-		if match.IsComplete() {
+		if match.IsComplete() || match.TypeOrder < web.arena.CurrentMatch.TypeOrder {
 			continue
 		}
 		upcomingMatches = append(upcomingMatches, match)
@@ -64,26 +84,22 @@ func (web *Web) queueingDisplayHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	template, err := web.parseFiles("templates/queueing_display.html")
+	template, err := web.parseFiles("templates/queueing_display_match_load.html")
 	if err != nil {
 		handleWebErr(w, err)
 		return
 	}
 
 	data := struct {
-		*model.EventSettings
-		MatchTypePrefix   string
 		Matches           []model.Match
 		RedOffFieldTeams  [][]int
 		BlueOffFieldTeams [][]int
 	}{
-		web.arena.EventSettings,
-		web.arena.CurrentMatch.TypePrefix(),
 		upcomingMatches,
 		redOffFieldTeamsByMatch,
 		blueOffFieldTeamsByMatch,
 	}
-	err = template.ExecuteTemplate(w, "queueing_display.html", data)
+	err = template.ExecuteTemplate(w, "queueing_display_match_load.html", data)
 	if err != nil {
 		handleWebErr(w, err)
 		return

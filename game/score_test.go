@@ -9,214 +9,230 @@ import (
 )
 
 func TestScoreSummary(t *testing.T) {
+	MelodyBonusThresholdWithoutCoop = 18
+	MelodyBonusThresholdWithCoop = 15
 	redScore := TestScore1()
 	blueScore := TestScore2()
 
-	redSummary := redScore.Summarize(blueScore.Fouls)
-	assert.Equal(t, 4, redSummary.TaxiPoints)
-	assert.Equal(t, 7, redSummary.AutoCargoCount)
-	assert.Equal(t, 26, redSummary.AutoCargoPoints)
-	assert.Equal(t, 17, redSummary.CargoCount)
-	assert.Equal(t, 44, redSummary.CargoPoints)
-	assert.Equal(t, 19, redSummary.HangarPoints)
-	assert.Equal(t, 67, redSummary.MatchPoints)
+	redSummary := redScore.Summarize(blueScore)
+	assert.Equal(t, 4, redSummary.LeavePoints)
+	assert.Equal(t, 36, redSummary.AutoPoints)
+	assert.Equal(t, 6, redSummary.AmpPoints)
+	assert.Equal(t, 57, redSummary.SpeakerPoints)
+	assert.Equal(t, 14, redSummary.StagePoints)
+	assert.Equal(t, 81, redSummary.MatchPoints)
 	assert.Equal(t, 0, redSummary.FoulPoints)
-	assert.Equal(t, 67, redSummary.Score)
-	assert.Equal(t, true, redSummary.QuintetAchieved)
-	assert.Equal(t, false, redSummary.CargoBonusRankingPoint)
-	assert.Equal(t, true, redSummary.HangarBonusRankingPoint)
+	assert.Equal(t, 81, redSummary.Score)
+	assert.Equal(t, true, redSummary.CoopertitionCriteriaMet)
+	assert.Equal(t, false, redSummary.CoopertitionBonus)
+	assert.Equal(t, 17, redSummary.NumNotes)
+	assert.Equal(t, 18, redSummary.NumNotesGoal)
+	assert.Equal(t, false, redSummary.MelodyBonusRankingPoint)
+	assert.Equal(t, false, redSummary.EnsembleBonusRankingPoint)
+	assert.Equal(t, 0, redSummary.BonusRankingPoints)
+	assert.Equal(t, 0, redSummary.NumOpponentTechFouls)
 
-	blueSummary := blueScore.Summarize(redScore.Fouls)
-	assert.Equal(t, 2, blueSummary.TaxiPoints)
-	assert.Equal(t, 4, blueSummary.AutoCargoCount)
-	assert.Equal(t, 14, blueSummary.AutoCargoPoints)
-	assert.Equal(t, 25, blueSummary.CargoCount)
-	assert.Equal(t, 45, blueSummary.CargoPoints)
-	assert.Equal(t, 14, blueSummary.HangarPoints)
-	assert.Equal(t, 61, blueSummary.MatchPoints)
-	assert.Equal(t, 20, blueSummary.FoulPoints)
-	assert.Equal(t, 81, blueSummary.Score)
-	assert.Equal(t, false, blueSummary.QuintetAchieved)
-	assert.Equal(t, true, blueSummary.CargoBonusRankingPoint)
-	assert.Equal(t, false, blueSummary.HangarBonusRankingPoint)
+	blueSummary := blueScore.Summarize(redScore)
+	assert.Equal(t, 2, blueSummary.LeavePoints)
+	assert.Equal(t, 42, blueSummary.AutoPoints)
+	assert.Equal(t, 51, blueSummary.AmpPoints)
+	assert.Equal(t, 161, blueSummary.SpeakerPoints)
+	assert.Equal(t, 13, blueSummary.StagePoints)
+	assert.Equal(t, 227, blueSummary.MatchPoints) // 187
+	assert.Equal(t, 29, blueSummary.FoulPoints)
+	assert.Equal(t, 256, blueSummary.Score)
+	assert.Equal(t, false, blueSummary.CoopertitionCriteriaMet)
+	assert.Equal(t, false, blueSummary.CoopertitionBonus)
+	assert.Equal(t, 85, blueSummary.NumNotes)
+	assert.Equal(t, 18, blueSummary.NumNotesGoal)
+	assert.Equal(t, true, blueSummary.MelodyBonusRankingPoint)
+	assert.Equal(t, true, blueSummary.EnsembleBonusRankingPoint)
+	assert.Equal(t, 2, blueSummary.BonusRankingPoints)
+	assert.Equal(t, 5, blueSummary.NumOpponentTechFouls)
 
-	// Test invalid foul.
+	// Test that unsetting the team and rule ID don't invalidate the foul.
+	redScore.Fouls[0].TeamId = 0
 	redScore.Fouls[0].RuleId = 0
-	assert.Equal(t, 12, blueScore.Summarize(redScore.Fouls).FoulPoints)
+	assert.Equal(t, 29, blueScore.Summarize(redScore).FoulPoints)
 
-	// Test elimination disqualification.
-	redScore.ElimDq = true
-	assert.Equal(t, 0, redScore.Summarize(blueScore.Fouls).Score)
-	assert.NotEqual(t, 0, blueScore.Summarize(blueScore.Fouls).Score)
-	blueScore.ElimDq = true
-	assert.Equal(t, 0, blueScore.Summarize(redScore.Fouls).Score)
+	// Test playoff disqualification.
+	redScore.PlayoffDq = true
+	assert.Equal(t, 0, redScore.Summarize(blueScore).Score)
+	assert.NotEqual(t, 0, blueScore.Summarize(blueScore).Score)
+	blueScore.PlayoffDq = true
+	assert.Equal(t, 0, blueScore.Summarize(redScore).Score)
 }
 
-func TestScoreCargoBonusRankingPoint(t *testing.T) {
-	var score Score
+func TestScoreMelodyBonusRankingPoint(t *testing.T) {
+	redScore := TestScore1()
+	blueScore := TestScore2()
 
-	score.AutoCargoLower[0] = 2
-	summary := score.Summarize([]Foul{})
-	assert.Equal(t, 20, summary.CargoGoal)
-	assert.Equal(t, false, summary.QuintetAchieved)
-	assert.Equal(t, false, summary.CargoBonusRankingPoint)
+	redScoreSummary := redScore.Summarize(blueScore)
+	blueScoreSummary := blueScore.Summarize(redScore)
+	assert.Equal(t, true, redScoreSummary.CoopertitionCriteriaMet)
+	assert.Equal(t, false, redScoreSummary.CoopertitionBonus)
+	assert.Equal(t, 17, redScoreSummary.NumNotes)
+	assert.Equal(t, 18, redScoreSummary.NumNotesGoal)
+	assert.Equal(t, false, redScoreSummary.MelodyBonusRankingPoint)
+	assert.Equal(t, false, blueScoreSummary.CoopertitionCriteriaMet)
+	assert.Equal(t, false, blueScoreSummary.CoopertitionBonus)
+	assert.Equal(t, 85, blueScoreSummary.NumNotes)
+	assert.Equal(t, 18, blueScoreSummary.NumNotesGoal)
+	assert.Equal(t, true, blueScoreSummary.MelodyBonusRankingPoint)
 
-	score.AutoCargoLower[0] = 17
-	summary = score.Summarize([]Foul{})
-	assert.Equal(t, 18, summary.CargoGoal)
-	assert.Equal(t, true, summary.QuintetAchieved)
-	assert.Equal(t, false, summary.CargoBonusRankingPoint)
+	// Reduce blue notes to 18 and verify that the bonus is still awarded.
+	blueScore.AmpSpeaker.TeleopAmpNotes = 2
+	blueScore.AmpSpeaker.TeleopAmplifiedSpeakerNotes = 5
+	redScoreSummary = redScore.Summarize(blueScore)
+	blueScoreSummary = blueScore.Summarize(redScore)
+	assert.Equal(t, true, redScoreSummary.CoopertitionCriteriaMet)
+	assert.Equal(t, false, redScoreSummary.CoopertitionBonus)
+	assert.Equal(t, 17, redScoreSummary.NumNotes)
+	assert.Equal(t, 18, redScoreSummary.NumNotesGoal)
+	assert.Equal(t, false, redScoreSummary.MelodyBonusRankingPoint)
+	assert.Equal(t, false, blueScoreSummary.CoopertitionCriteriaMet)
+	assert.Equal(t, false, blueScoreSummary.CoopertitionBonus)
+	assert.Equal(t, 18, blueScoreSummary.NumNotes)
+	assert.Equal(t, 18, blueScoreSummary.NumNotesGoal)
+	assert.Equal(t, true, blueScoreSummary.MelodyBonusRankingPoint)
 
-	score.AutoCargoLower[0] = 18
-	summary = score.Summarize([]Foul{})
-	assert.Equal(t, 18, summary.CargoGoal)
-	assert.Equal(t, true, summary.QuintetAchieved)
-	assert.Equal(t, true, summary.CargoBonusRankingPoint)
+	// Increase non-coopertition threshold above the blue note count.
+	MelodyBonusThresholdWithoutCoop = 19
+	redScoreSummary = redScore.Summarize(blueScore)
+	blueScoreSummary = blueScore.Summarize(redScore)
+	assert.Equal(t, true, redScoreSummary.CoopertitionCriteriaMet)
+	assert.Equal(t, false, redScoreSummary.CoopertitionBonus)
+	assert.Equal(t, 17, redScoreSummary.NumNotes)
+	assert.Equal(t, 19, redScoreSummary.NumNotesGoal)
+	assert.Equal(t, false, redScoreSummary.MelodyBonusRankingPoint)
+	assert.Equal(t, false, blueScoreSummary.CoopertitionCriteriaMet)
+	assert.Equal(t, false, blueScoreSummary.CoopertitionBonus)
+	assert.Equal(t, 18, blueScoreSummary.NumNotes)
+	assert.Equal(t, 19, blueScoreSummary.NumNotesGoal)
+	assert.Equal(t, false, blueScoreSummary.MelodyBonusRankingPoint)
 
-	score.AutoCargoLower[0] = 5
-	score.TeleopCargoLower[0] = 12
-	summary = score.Summarize([]Foul{})
-	assert.Equal(t, 18, summary.CargoGoal)
-	assert.Equal(t, true, summary.QuintetAchieved)
-	assert.Equal(t, false, summary.CargoBonusRankingPoint)
+	// Reduce red notes to the non-coopertition threshold.
+	MelodyBonusThresholdWithCoop = 16
+	redScore.AmpSpeaker.TeleopAmpNotes = 3
+	redScoreSummary = redScore.Summarize(blueScore)
+	blueScoreSummary = blueScore.Summarize(redScore)
+	assert.Equal(t, true, redScoreSummary.CoopertitionCriteriaMet)
+	assert.Equal(t, false, redScoreSummary.CoopertitionBonus)
+	assert.Equal(t, 16, redScoreSummary.NumNotes)
+	assert.Equal(t, 19, redScoreSummary.NumNotesGoal)
+	assert.Equal(t, false, redScoreSummary.MelodyBonusRankingPoint)
+	assert.Equal(t, false, blueScoreSummary.CoopertitionCriteriaMet)
+	assert.Equal(t, false, blueScoreSummary.CoopertitionBonus)
+	assert.Equal(t, 18, blueScoreSummary.NumNotes)
+	assert.Equal(t, 19, blueScoreSummary.NumNotesGoal)
+	assert.Equal(t, false, blueScoreSummary.MelodyBonusRankingPoint)
 
-	CargoBonusRankingPointThresholdWithQuintet = 14
-	CargoBonusRankingPointThresholdWithoutQuintet = 19
-	score.AutoCargoLower[0] = 5
-	score.TeleopCargoLower[0] = 13
-	summary = score.Summarize([]Foul{})
-	assert.Equal(t, 14, summary.CargoGoal)
-	assert.Equal(t, true, summary.QuintetAchieved)
-	assert.Equal(t, true, summary.CargoBonusRankingPoint)
+	// Make blue fulfill the coopertition bonus requirement.
+	blueScore.AmpSpeaker.CoopActivated = true
+	redScoreSummary = redScore.Summarize(blueScore)
+	blueScoreSummary = blueScore.Summarize(redScore)
+	assert.Equal(t, true, redScoreSummary.CoopertitionCriteriaMet)
+	assert.Equal(t, true, redScoreSummary.CoopertitionBonus)
+	assert.Equal(t, 16, redScoreSummary.NumNotes)
+	assert.Equal(t, 16, redScoreSummary.NumNotesGoal)
+	assert.Equal(t, true, redScoreSummary.MelodyBonusRankingPoint)
+	assert.Equal(t, true, blueScoreSummary.CoopertitionCriteriaMet)
+	assert.Equal(t, true, blueScoreSummary.CoopertitionBonus)
+	assert.Equal(t, 18, blueScoreSummary.NumNotes)
+	assert.Equal(t, 16, blueScoreSummary.NumNotesGoal)
+	assert.Equal(t, true, blueScoreSummary.MelodyBonusRankingPoint)
 
-	QuintetThreshold = 3
-	score.AutoCargoLower[0] = 3
-	score.TeleopCargoLower[0] = 6
-	summary = score.Summarize([]Foul{})
-	assert.Equal(t, 14, summary.CargoGoal)
-	assert.Equal(t, true, summary.QuintetAchieved)
-	assert.Equal(t, false, summary.CargoBonusRankingPoint)
-
-	QuintetThreshold = 5
-	score.AutoCargoLower[0] = 4
-	score.TeleopCargoLower[0] = 14
-	summary = score.Summarize([]Foul{})
-	assert.Equal(t, 19, summary.CargoGoal)
-	assert.Equal(t, false, summary.QuintetAchieved)
-	assert.Equal(t, false, summary.CargoBonusRankingPoint)
-
-	score.AutoCargoLower[0] = 4
-	score.TeleopCargoLower[0] = 16
-	summary = score.Summarize([]Foul{})
-	assert.Equal(t, 19, summary.CargoGoal)
-	assert.Equal(t, false, summary.QuintetAchieved)
-	assert.Equal(t, true, summary.CargoBonusRankingPoint)
-
-	score.AutoCargoLower[0] = 0
-	score.TeleopCargoLower[0] = 20
-	summary = score.Summarize([]Foul{})
-	assert.Equal(t, 19, summary.CargoGoal)
-	assert.Equal(t, false, summary.QuintetAchieved)
-	assert.Equal(t, true, summary.CargoBonusRankingPoint)
-
-	// Test with the Quintet disabled.
-	QuintetThreshold = 0
-	CargoBonusRankingPointThresholdWithoutQuintet = 25
-	score.AutoCargoLower[0] = 1
-	score.TeleopCargoLower[0] = 16
-	summary = score.Summarize([]Foul{})
-	assert.Equal(t, 25, summary.CargoGoal)
-	assert.Equal(t, false, summary.QuintetAchieved)
-	assert.Equal(t, false, summary.CargoBonusRankingPoint)
-
-	score.AutoCargoLower[0] = 7
-	score.TeleopCargoLower[0] = 17
-	summary = score.Summarize([]Foul{})
-	assert.Equal(t, 25, summary.CargoGoal)
-	assert.Equal(t, false, summary.QuintetAchieved)
-	assert.Equal(t, false, summary.CargoBonusRankingPoint)
-
-	score.AutoCargoLower[0] = 7
-	score.TeleopCargoLower[0] = 20
-	summary = score.Summarize([]Foul{})
-	assert.Equal(t, 25, summary.CargoGoal)
-	assert.Equal(t, false, summary.QuintetAchieved)
-	assert.Equal(t, true, summary.CargoBonusRankingPoint)
+	// Disable the coopertition bonus.
+	MelodyBonusThresholdWithCoop = 0
+	blueScore.AmpSpeaker.AutoSpeakerNotes = 9
+	redScoreSummary = redScore.Summarize(blueScore)
+	blueScoreSummary = blueScore.Summarize(redScore)
+	assert.Equal(t, false, redScoreSummary.CoopertitionCriteriaMet)
+	assert.Equal(t, false, redScoreSummary.CoopertitionBonus)
+	assert.Equal(t, 16, redScoreSummary.NumNotes)
+	assert.Equal(t, 19, redScoreSummary.NumNotesGoal)
+	assert.Equal(t, false, redScoreSummary.MelodyBonusRankingPoint)
+	assert.Equal(t, false, blueScoreSummary.CoopertitionCriteriaMet)
+	assert.Equal(t, false, blueScoreSummary.CoopertitionBonus)
+	assert.Equal(t, 19, blueScoreSummary.NumNotes)
+	assert.Equal(t, 19, blueScoreSummary.NumNotesGoal)
+	assert.Equal(t, true, blueScoreSummary.MelodyBonusRankingPoint)
 }
 
-func TestScoreHangarBonusRankingPoint(t *testing.T) {
+func TestScoreEnsembleBonusRankingPoint(t *testing.T) {
 	var score Score
 
 	score.EndgameStatuses = [3]EndgameStatus{EndgameNone, EndgameNone, EndgameNone}
-	assert.Equal(t, false, score.Summarize([]Foul{}).HangarBonusRankingPoint)
+	score.MicrophoneStatuses = [3]bool{false, false, false}
+	score.TrapStatuses = [3]bool{false, false, false}
+	assert.Equal(t, false, score.Summarize(&Score{}).EnsembleBonusRankingPoint)
 
-	score.EndgameStatuses = [3]EndgameStatus{EndgameLow, EndgameLow, EndgameLow}
-	assert.Equal(t, false, score.Summarize([]Foul{}).HangarBonusRankingPoint)
+	score.EndgameStatuses = [3]EndgameStatus{EndgameStageLeft, EndgameCenterStage, EndgameStageRight}
+	assert.Equal(t, false, score.Summarize(&Score{}).EnsembleBonusRankingPoint)
 
-	score.EndgameStatuses = [3]EndgameStatus{EndgameLow, EndgameLow, EndgameMid}
-	assert.Equal(t, false, score.Summarize([]Foul{}).HangarBonusRankingPoint)
+	// Try various combinations of Harmony.
+	score.EndgameStatuses = [3]EndgameStatus{EndgameStageLeft, EndgameCenterStage, EndgameStageLeft}
+	assert.Equal(t, 11, score.Summarize(&Score{}).StagePoints)
+	assert.Equal(t, true, score.Summarize(&Score{}).EnsembleBonusRankingPoint)
+	score.EndgameStatuses = [3]EndgameStatus{EndgameCenterStage, EndgameCenterStage, EndgameStageLeft}
+	assert.Equal(t, true, score.Summarize(&Score{}).EnsembleBonusRankingPoint)
+	score.EndgameStatuses = [3]EndgameStatus{EndgameCenterStage, EndgameCenterStage, EndgameStageLeft}
+	assert.Equal(t, true, score.Summarize(&Score{}).EnsembleBonusRankingPoint)
+	score.EndgameStatuses = [3]EndgameStatus{EndgameStageRight, EndgameStageRight, EndgameCenterStage}
+	assert.Equal(t, true, score.Summarize(&Score{}).EnsembleBonusRankingPoint)
+	score.EndgameStatuses = [3]EndgameStatus{EndgameStageRight, EndgameStageRight, EndgameStageRight}
+	assert.Equal(t, 13, score.Summarize(&Score{}).StagePoints)
+	assert.Equal(t, true, score.Summarize(&Score{}).EnsembleBonusRankingPoint)
 
-	score.EndgameStatuses = [3]EndgameStatus{EndgameMid, EndgameLow, EndgameMid}
-	assert.Equal(t, true, score.Summarize([]Foul{}).HangarBonusRankingPoint)
+	// Try various combinations with microphones.
+	score.EndgameStatuses = [3]EndgameStatus{EndgameStageLeft, EndgameCenterStage, EndgameStageRight}
+	score.MicrophoneStatuses = [3]bool{true, false, false}
+	assert.Equal(t, 10, score.Summarize(&Score{}).StagePoints)
+	assert.Equal(t, true, score.Summarize(&Score{}).EnsembleBonusRankingPoint)
+	score.MicrophoneStatuses = [3]bool{true, true, true}
+	assert.Equal(t, 12, score.Summarize(&Score{}).StagePoints)
+	assert.Equal(t, true, score.Summarize(&Score{}).EnsembleBonusRankingPoint)
+	score.EndgameStatuses = [3]EndgameStatus{EndgameNone, EndgameStageRight, EndgameStageRight}
+	score.MicrophoneStatuses = [3]bool{false, false, true}
+	assert.Equal(t, 10, score.Summarize(&Score{}).StagePoints)
+	assert.Equal(t, true, score.Summarize(&Score{}).EnsembleBonusRankingPoint)
+	score.EndgameStatuses = [3]EndgameStatus{EndgameParked, EndgameStageRight, EndgameCenterStage}
+	score.MicrophoneStatuses = [3]bool{false, true, false}
+	assert.Equal(t, 8, score.Summarize(&Score{}).StagePoints)
+	assert.Equal(t, false, score.Summarize(&Score{}).EnsembleBonusRankingPoint)
 
-	score.EndgameStatuses = [3]EndgameStatus{EndgameMid, EndgameLow, EndgameNone}
-	assert.Equal(t, false, score.Summarize([]Foul{}).HangarBonusRankingPoint)
-
-	score.EndgameStatuses = [3]EndgameStatus{EndgameHigh, EndgameLow, EndgameNone}
-	assert.Equal(t, false, score.Summarize([]Foul{}).HangarBonusRankingPoint)
-
-	score.EndgameStatuses = [3]EndgameStatus{EndgameHigh, EndgameLow, EndgameLow}
-	assert.Equal(t, true, score.Summarize([]Foul{}).HangarBonusRankingPoint)
-
-	score.EndgameStatuses = [3]EndgameStatus{EndgameHigh, EndgameMid, EndgameNone}
-	assert.Equal(t, true, score.Summarize([]Foul{}).HangarBonusRankingPoint)
-
-	score.EndgameStatuses = [3]EndgameStatus{EndgameHigh, EndgameNone, EndgameNone}
-	assert.Equal(t, false, score.Summarize([]Foul{}).HangarBonusRankingPoint)
-
-	score.EndgameStatuses = [3]EndgameStatus{EndgameNone, EndgameNone, EndgameTraversal}
-	assert.Equal(t, false, score.Summarize([]Foul{}).HangarBonusRankingPoint)
-
-	score.EndgameStatuses = [3]EndgameStatus{EndgameNone, EndgameLow, EndgameTraversal}
-	assert.Equal(t, true, score.Summarize([]Foul{}).HangarBonusRankingPoint)
-
-	HangarBonusRankingPointThreshold = 20
-	score.EndgameStatuses = [3]EndgameStatus{EndgameNone, EndgameLow, EndgameTraversal}
-	assert.Equal(t, false, score.Summarize([]Foul{}).HangarBonusRankingPoint)
+	// Try various combinations with traps.
+	score.EndgameStatuses = [3]EndgameStatus{EndgameStageLeft, EndgameCenterStage, EndgameParked}
+	score.MicrophoneStatuses = [3]bool{false, false, false}
+	score.TrapStatuses = [3]bool{false, false, true}
+	assert.Equal(t, 12, score.Summarize(&Score{}).StagePoints)
+	assert.Equal(t, true, score.Summarize(&Score{}).EnsembleBonusRankingPoint)
+	score.EndgameStatuses = [3]EndgameStatus{EndgameParked, EndgameCenterStage, EndgameParked}
+	score.TrapStatuses = [3]bool{true, true, true}
+	assert.Equal(t, 20, score.Summarize(&Score{}).StagePoints)
+	assert.Equal(t, false, score.Summarize(&Score{}).EnsembleBonusRankingPoint)
+	score.EndgameStatuses = [3]EndgameStatus{EndgameParked, EndgameParked, EndgameParked}
+	assert.Equal(t, 18, score.Summarize(&Score{}).StagePoints)
+	assert.Equal(t, false, score.Summarize(&Score{}).EnsembleBonusRankingPoint)
 }
 
-func TestScoreDoubleBonusRankingPoint(t *testing.T) {
-	var score Score
-	DoubleBonusRankingPointThreshold = 40
+func TestScoreFreeEnsembleBonusRankingPointFromFoul(t *testing.T) {
+	var score1, score2 Score
+	foul := Foul{IsTechnical: true, RuleId: 29}
 
-	score.AutoCargoLower[0] = 39
-	score.EndgameStatuses = [3]EndgameStatus{EndgameTraversal, EndgameTraversal, EndgameNone}
-	assert.Equal(t, false, score.Summarize([]Foul{}).DoubleBonusRankingPoint)
+	assert.Equal(t, true, foul.Rule().IsTechnical)
+	assert.Equal(t, true, foul.Rule().IsRankingPoint)
+	score2.Fouls = []Foul{foul}
 
-	score.AutoCargoUpper[0] = 1
-	assert.Equal(t, true, score.Summarize([]Foul{}).DoubleBonusRankingPoint)
+	summary := score1.Summarize(&score2)
+	assert.Equal(t, 5, summary.Score)
+	assert.Equal(t, true, summary.EnsembleBonusRankingPoint)
+	assert.Equal(t, 1, summary.BonusRankingPoints)
 
-	score.AutoCargoUpper[0] = 0
-	score.EndgameStatuses = [3]EndgameStatus{EndgameTraversal, EndgameTraversal, EndgameHigh}
-	assert.Equal(t, true, score.Summarize([]Foul{}).DoubleBonusRankingPoint)
-
-	DoubleBonusRankingPointThreshold = 41
-	assert.Equal(t, false, score.Summarize([]Foul{}).DoubleBonusRankingPoint)
-
-	score.TeleopCargoUpper[0] = 2
-	assert.Equal(t, true, score.Summarize([]Foul{}).DoubleBonusRankingPoint)
-
-	DoubleBonusRankingPointThreshold = 45
-	assert.Equal(t, false, score.Summarize([]Foul{}).DoubleBonusRankingPoint)
-
-	score.EndgameStatuses = [3]EndgameStatus{EndgameTraversal, EndgameTraversal, EndgameTraversal}
-	assert.Equal(t, true, score.Summarize([]Foul{}).DoubleBonusRankingPoint)
-
-	DoubleBonusRankingPointThreshold = 1
-	assert.Equal(t, true, score.Summarize([]Foul{}).DoubleBonusRankingPoint)
-
-	DoubleBonusRankingPointThreshold = 0
-	assert.Equal(t, false, score.Summarize([]Foul{}).DoubleBonusRankingPoint)
+	summary = score2.Summarize(&score1)
+	assert.Equal(t, 0, summary.Score)
+	assert.Equal(t, false, summary.EnsembleBonusRankingPoint)
+	assert.Equal(t, 0, summary.BonusRankingPoints)
 }
 
 func TestScoreEquals(t *testing.T) {
@@ -230,32 +246,27 @@ func TestScoreEquals(t *testing.T) {
 	assert.False(t, score3.Equals(score1))
 
 	score2 = TestScore1()
-	score2.TaxiStatuses[0] = false
+	score2.LeaveStatuses[0] = false
 	assert.False(t, score1.Equals(score2))
 	assert.False(t, score2.Equals(score1))
 
 	score2 = TestScore1()
-	score2.AutoCargoLower[1] = 3
+	score2.AmpSpeaker.AutoAmpNotes = 5
 	assert.False(t, score1.Equals(score2))
 	assert.False(t, score2.Equals(score1))
 
 	score2 = TestScore1()
-	score2.AutoCargoUpper[0] = 7
+	score2.EndgameStatuses[1] = EndgameParked
 	assert.False(t, score1.Equals(score2))
 	assert.False(t, score2.Equals(score1))
 
 	score2 = TestScore1()
-	score2.TeleopCargoLower[2] = 30
+	score2.MicrophoneStatuses[0] = true
 	assert.False(t, score1.Equals(score2))
 	assert.False(t, score2.Equals(score1))
 
 	score2 = TestScore1()
-	score2.TeleopCargoUpper[1] = 31
-	assert.False(t, score1.Equals(score2))
-	assert.False(t, score2.Equals(score1))
-
-	score2 = TestScore1()
-	score2.EndgameStatuses[0] = EndgameNone
+	score2.TrapStatuses[0] = false
 	assert.False(t, score1.Equals(score2))
 	assert.False(t, score2.Equals(score1))
 
@@ -265,7 +276,7 @@ func TestScoreEquals(t *testing.T) {
 	assert.False(t, score2.Equals(score1))
 
 	score2 = TestScore1()
-	score2.Fouls[0].RuleId = 1
+	score2.Fouls[0].IsTechnical = false
 	assert.False(t, score1.Equals(score2))
 	assert.False(t, score2.Equals(score1))
 
@@ -275,12 +286,12 @@ func TestScoreEquals(t *testing.T) {
 	assert.False(t, score2.Equals(score1))
 
 	score2 = TestScore1()
-	score2.Fouls[0].TimeInMatchSec += 1
+	score2.Fouls[0].RuleId = 1
 	assert.False(t, score1.Equals(score2))
 	assert.False(t, score2.Equals(score1))
 
 	score2 = TestScore1()
-	score2.ElimDq = !score2.ElimDq
+	score2.PlayoffDq = !score2.PlayoffDq
 	assert.False(t, score1.Equals(score2))
 	assert.False(t, score2.Equals(score1))
 }

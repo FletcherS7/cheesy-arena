@@ -3,9 +3,9 @@
 //
 // Client-side methods for editing a match in the match review page.
 
-var scoreTemplate = Handlebars.compile($("#scoreTemplate").html());
-var allianceResults = {};
-var matchResult;
+const scoreTemplate = Handlebars.compile($("#scoreTemplate").html());
+const allianceResults = {};
+let matchResult;
 
 // Hijack the form submission to inject the data in JSON form so that it's easier for the server to parse.
 $("form").submit(function() {
@@ -16,7 +16,7 @@ $("form").submit(function() {
   matchResult.BlueScore = allianceResults["blue"].score;
   matchResult.RedCards = allianceResults["red"].cards;
   matchResult.BlueCards = allianceResults["blue"].cards;
-  var matchResultJson = JSON.stringify(matchResult);
+  const matchResultJson = JSON.stringify(matchResult);
 
   // Inject the JSON data into the form as hidden inputs.
   $("<input />").attr("type", "hidden").attr("name", "matchResultJson").attr("value", matchResultJson).appendTo("form");
@@ -25,31 +25,33 @@ $("form").submit(function() {
 });
 
 // Draws the match-editing form for one alliance based on the cached result data.
-var renderResults = function(alliance) {
-  var result = allianceResults[alliance];
-  var scoreContent = scoreTemplate(result);
+const renderResults = function(alliance) {
+  const result = allianceResults[alliance];
+  const scoreContent = scoreTemplate(result);
   $("#" + alliance + "Score").html(scoreContent);
 
   // Set the values of the form fields from the JSON results data.
-  for (var i = 0; i < 4; i++) {
-    var i1 = i + 1;
+  getInputElement(alliance, "CoopActivated").prop("checked", result.score.AmpSpeaker.CoopActivated);
+  getInputElement(alliance, "AutoAmpNotes").val(result.score.AmpSpeaker.AutoAmpNotes);
+  getInputElement(alliance, "AutoSpeakerNotes").val(result.score.AmpSpeaker.AutoSpeakerNotes);
+  getInputElement(alliance, "TeleopAmpNotes").val(result.score.AmpSpeaker.TeleopAmpNotes);
+  getInputElement(alliance, "TeleopUnamplifiedSpeakerNotes").val(result.score.AmpSpeaker.TeleopUnamplifiedSpeakerNotes);
+  getInputElement(alliance, "TeleopAmplifiedSpeakerNotes").val(result.score.AmpSpeaker.TeleopAmplifiedSpeakerNotes);
 
-    if (i < 3) {
-      getInputElement(alliance, "TaxiStatuses" + i1).prop("checked", result.score.TaxiStatuses[i]);
-      getInputElement(alliance, "EndgameStatuses" + i1, result.score.EndgameStatuses[i]).prop("checked", true);
-    }
+  for (let i = 0; i < 3; i++) {
+    const i1 = i + 1;
 
-    getInputElement(alliance, "AutoCargoLower" + i).val(result.score.AutoCargoLower[i]);
-    getInputElement(alliance, "AutoCargoUpper" + i).val(result.score.AutoCargoUpper[i]);
-    getInputElement(alliance, "TeleopCargoLower" + i).val(result.score.TeleopCargoLower[i]);
-    getInputElement(alliance, "TeleopCargoUpper" + i).val(result.score.TeleopCargoUpper[i]);
+    getInputElement(alliance, "LeaveStatuses" + i1).prop("checked", result.score.LeaveStatuses[i]);
+    getInputElement(alliance, "EndgameStatuses" + i1, result.score.EndgameStatuses[i]).prop("checked", true);
+    getInputElement(alliance, "MicrophoneStatuses" + i1).prop("checked", result.score.MicrophoneStatuses[i]);
+    getInputElement(alliance, "TrapStatuses" + i1).prop("checked", result.score.TrapStatuses[i]);
   }
 
   if (result.score.Fouls != null) {
     $.each(result.score.Fouls, function(k, v) {
+      getInputElement(alliance, "Foul" + k + "IsTechnical").prop("checked", v.IsTechnical);
       getInputElement(alliance, "Foul" + k + "Team", v.TeamId).prop("checked", true);
       getSelectElement(alliance, "Foul" + k + "RuleId").val(v.RuleId);
-      getInputElement(alliance, "Foul" + k + "Time").val(v.TimeInMatchSec);
     });
   }
 
@@ -61,38 +63,43 @@ var renderResults = function(alliance) {
 };
 
 // Converts the current form values back into JSON structures and caches them.
-var updateResults = function(alliance) {
-  var result = allianceResults[alliance];
-  var formData = {};
+const updateResults = function(alliance) {
+  const result = allianceResults[alliance];
+  const formData = {};
   $.each($("form").serializeArray(), function(k, v) {
     formData[v.name] = v.value;
   });
 
-  result.score.TaxiStatuses = [];
-  result.score.AutoCargoLower = [];
-  result.score.AutoCargoUpper = [];
-  result.score.TeleopCargoLower = [];
-  result.score.TeleopCargoUpper = [];
+  result.score.LeaveStatuses = [];
+  result.score.AmpSpeaker = {
+    CoopActivated: formData[alliance + "CoopActivated"] === "on",
+    AutoAmpNotes: parseInt(formData[alliance + "AutoAmpNotes"]),
+    AutoSpeakerNotes: parseInt(formData[alliance + "AutoSpeakerNotes"]),
+    TeleopAmpNotes: parseInt(formData[alliance + "TeleopAmpNotes"]),
+    TeleopUnamplifiedSpeakerNotes: parseInt(formData[alliance + "TeleopUnamplifiedSpeakerNotes"]),
+    TeleopAmplifiedSpeakerNotes: parseInt(formData[alliance + "TeleopAmplifiedSpeakerNotes"]),
+  };
   result.score.EndgameStatuses = [];
-  for (var i = 0; i < 4; i++) {
-    var i1 = i + 1;
+  result.score.MicrophoneStatuses = [];
+  result.score.TrapStatuses = [];
+  for (let i = 0; i < 3; i++) {
+    const i1 = i + 1;
 
-    if (i < 3) {
-      result.score.TaxiStatuses[i] = formData[alliance + "TaxiStatuses" + i1] === "on";
-      result.score.EndgameStatuses[i] = parseInt(formData[alliance + "EndgameStatuses" + i1]);
-    }
-
-    result.score.AutoCargoLower[i] = parseInt(formData[alliance + "AutoCargoLower" + i]);
-    result.score.AutoCargoUpper[i] = parseInt(formData[alliance + "AutoCargoUpper" + i]);
-    result.score.TeleopCargoLower[i] = parseInt(formData[alliance + "TeleopCargoLower" + i]);
-    result.score.TeleopCargoUpper[i] = parseInt(formData[alliance + "TeleopCargoUpper" + i]);
+    result.score.LeaveStatuses[i] = formData[alliance + "LeaveStatuses" + i1] === "on";
+    result.score.EndgameStatuses[i] = parseInt(formData[alliance + "EndgameStatuses" + i1]);
+    result.score.MicrophoneStatuses[i] = formData[alliance + "MicrophoneStatuses" + i1] === "on";
+    result.score.TrapStatuses[i] = formData[alliance + "TrapStatuses" + i1] === "on";
   }
 
   result.score.Fouls = [];
-  for (var i = 0; formData[alliance + "Foul" + i + "Time"]; i++) {
-    var prefix = alliance + "Foul" + i;
-    var foul = {TeamId: parseInt(formData[prefix + "Team"]), RuleId: parseInt(formData[prefix + "RuleId"]),
-                TimeInMatchSec: parseFloat(formData[prefix + "Time"])};
+
+  for (let i = 0; formData[alliance + "Foul" + i + "Index"]; i++) {
+    const prefix = alliance + "Foul" + i;
+    const foul = {
+      IsTechnical: formData[prefix + "IsTechnical"] === "on",
+      TeamId: parseInt(formData[prefix + "Team"]),
+      RuleId: parseInt(formData[prefix + "RuleId"]),
+    };
     result.score.Fouls.push(foul);
   }
 
@@ -103,24 +110,24 @@ var updateResults = function(alliance) {
 };
 
 // Appends a blank foul to the end of the list.
-var addFoul = function(alliance) {
+const addFoul = function(alliance) {
   updateResults(alliance);
-  var result = allianceResults[alliance];
-  result.score.Fouls.push({TeamId: 0, Rule: "", TimeInMatchSec: 0});
+  const result = allianceResults[alliance];
+  result.score.Fouls.push({IsTechnical: false, TeamId: 0, Rule: 0});
   renderResults(alliance);
 };
 
 // Removes the given foul from the list.
-var deleteFoul = function(alliance, index) {
+const deleteFoul = function(alliance, index) {
   updateResults(alliance);
-  var result = allianceResults[alliance];
+  const result = allianceResults[alliance];
   result.score.Fouls.splice(index, 1);
   renderResults(alliance);
 };
 
 // Returns the form input element having the given parameters.
-var getInputElement = function(alliance, name, value) {
-  var selector = "input[name=" + alliance + name + "]";
+const getInputElement = function(alliance, name, value) {
+  let selector = "input[name=" + alliance + name + "]";
   if (value !== undefined) {
     selector += "[value=" + value + "]";
   }
@@ -128,7 +135,7 @@ var getInputElement = function(alliance, name, value) {
 };
 
 // Returns the form select element having the given parameters.
-var getSelectElement = function(alliance, name) {
-  var selector = "select[name=" + alliance + name + "]";
+const getSelectElement = function(alliance, name) {
+  const selector = "select[name=" + alliance + name + "]";
   return $(selector);
 };

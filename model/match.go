@@ -6,37 +6,62 @@
 package model
 
 import (
+	"fmt"
 	"github.com/Team254/cheesy-arena/game"
 	"sort"
 	"strings"
 	"time"
 )
 
+//go:generate stringer -type=MatchType
+type MatchType int
+
+const (
+	Test MatchType = iota
+	Practice
+	Qualification
+	Playoff
+)
+
+func (t MatchType) Get() MatchType {
+	return t
+}
+
 type Match struct {
-	Id               int `db:"id"`
-	Type             string
-	DisplayName      string
-	Time             time.Time
-	ElimRound        int
-	ElimGroup        int
-	ElimInstance     int
-	ElimRedAlliance  int
-	ElimBlueAlliance int
-	Red1             int
-	Red1IsSurrogate  bool
-	Red2             int
-	Red2IsSurrogate  bool
-	Red3             int
-	Red3IsSurrogate  bool
-	Blue1            int
-	Blue1IsSurrogate bool
-	Blue2            int
-	Blue2IsSurrogate bool
-	Blue3            int
-	Blue3IsSurrogate bool
-	StartedAt        time.Time
-	ScoreCommittedAt time.Time
-	Status           game.MatchStatus
+	Id                  int `db:"id"`
+	Type                MatchType
+	TypeOrder           int
+	Time                time.Time
+	LongName            string
+	ShortName           string
+	NameDetail          string
+	PlayoffMatchGroupId string
+	PlayoffRedAlliance  int
+	PlayoffBlueAlliance int
+	Red1                int
+	Red1IsSurrogate     bool
+	Red2                int
+	Red2IsSurrogate     bool
+	Red3                int
+	Red3IsSurrogate     bool
+	Blue1               int
+	Blue1IsSurrogate    bool
+	Blue2               int
+	Blue2IsSurrogate    bool
+	Blue3               int
+	Blue3IsSurrogate    bool
+	StartedAt           time.Time
+	ScoreCommittedAt    time.Time
+	FieldReadyAt        time.Time
+	Status              game.MatchStatus
+	UseTiebreakCriteria bool
+	TbaMatchKey         TbaMatchKey
+}
+
+type TbaMatchKey struct {
+	CompLevel   string
+	SetNumber   int
+	MatchNumber int
 }
 
 func (database *Database) CreateMatch(match *Match) error {
@@ -59,36 +84,21 @@ func (database *Database) TruncateMatches() error {
 	return database.matchTable.truncate()
 }
 
-func (database *Database) GetMatchByName(matchType string, displayName string) (*Match, error) {
-	matches, err := database.matchTable.getAll()
+func (database *Database) GetMatchByTypeOrder(matchType MatchType, typeOrder int) (*Match, error) {
+	matches, err := database.GetMatchesByType(matchType, true)
 	if err != nil {
 		return nil, err
 	}
 
 	for _, match := range matches {
-		if match.Type == matchType && match.DisplayName == displayName {
+		if match.TypeOrder == typeOrder {
 			return &match, nil
 		}
 	}
 	return nil, nil
 }
 
-func (database *Database) GetMatchesByElimRoundGroup(round int, group int) ([]Match, error) {
-	matches, err := database.GetMatchesByType("elimination")
-	if err != nil {
-		return nil, err
-	}
-
-	var matchingMatches []Match
-	for _, match := range matches {
-		if match.ElimRound == round && match.ElimGroup == group {
-			matchingMatches = append(matchingMatches, match)
-		}
-	}
-	return matchingMatches, nil
-}
-
-func (database *Database) GetMatchesByType(matchType string) ([]Match, error) {
+func (database *Database) GetMatchesByType(matchType MatchType, includeHidden bool) ([]Match, error) {
 	matches, err := database.matchTable.getAll()
 	if err != nil {
 		return nil, err
@@ -96,64 +106,65 @@ func (database *Database) GetMatchesByType(matchType string) ([]Match, error) {
 
 	var matchingMatches []Match
 	for _, match := range matches {
-		if match.Type == matchType {
+		if match.Type == matchType && (includeHidden || match.Status != game.MatchHidden) {
 			matchingMatches = append(matchingMatches, match)
 		}
 	}
 
 	sort.Slice(matchingMatches, func(i, j int) bool {
-		if matchingMatches[i].ElimRound == matchingMatches[j].ElimRound {
-			if matchingMatches[i].ElimInstance == matchingMatches[j].ElimInstance {
-				if matchingMatches[i].ElimGroup == matchingMatches[j].ElimGroup {
-					return matchingMatches[i].Id < matchingMatches[j].Id
-				}
-				return matchingMatches[i].ElimGroup < matchingMatches[j].ElimGroup
-			}
-			return matchingMatches[i].ElimInstance < matchingMatches[j].ElimInstance
-		}
-		return matchingMatches[i].ElimRound < matchingMatches[j].ElimRound
+		return matchingMatches[i].TypeOrder < matchingMatches[j].TypeOrder
 	})
 	return matchingMatches, nil
 }
 
 func (match *Match) IsComplete() bool {
-	return match.Status != game.MatchNotPlayed
-}
-
-func (match *Match) CapitalizedType() string {
-	if match.Type == "" || match.Type == "test" {
-		return ""
-	} else if match.Type == "elimination" {
-		return "Playoff"
-	}
-	return strings.ToUpper(match.Type[0:1]) + match.Type[1:]
-}
-
-func (match *Match) TypePrefix() string {
-	if match.Type == "practice" {
-		return "P"
-	} else if match.Type == "qualification" {
-		return "Q"
-	}
-	return ""
+	return match.Status == game.RedWonMatch || match.Status == game.BlueWonMatch || match.Status == game.TieMatch
 }
 
 // Returns true if the match is of a type that allows substitution of teams.
 func (match *Match) ShouldAllowSubstitution() bool {
-	return match.Type != "qualification"
+	return match.Type != Qualification
+}
+
+// Returns true if the match is of a type that allows loading lineup information from Nexus.
+func (match *Match) ShouldAllowNexusSubstitution() bool {
+	return match.Type == Practice || match.Type == Playoff
 }
 
 // Returns true if the red and yellow cards should be updated as a result of the match.
 func (match *Match) ShouldUpdateCards() bool {
-	return match.Type == "qualification" || match.Type == "elimination"
+	return match.Type == Qualification || match.Type == Playoff
 }
 
 // Returns true if the rankings should be updated as a result of the match.
 func (match *Match) ShouldUpdateRankings() bool {
-	return match.Type == "qualification"
+	return match.Type == Qualification
 }
 
-// Returns true if the elimination match set should be updated as a result of the match.
-func (match *Match) ShouldUpdateEliminationMatches() bool {
-	return match.Type == "elimination"
+// Returns true if the playoff match set should be updated as a result of the match.
+func (match *Match) ShouldUpdatePlayoffMatches() bool {
+	return match.Type == Playoff
+}
+
+// Returns the enum equivalent of the given match type string.
+func MatchTypeFromString(matchTypeString string) (MatchType, error) {
+	switch strings.ToLower(matchTypeString) {
+	case "test":
+		return Test, nil
+	case "practice":
+		return Practice, nil
+	case "qualification":
+		return Qualification, nil
+	case "playoff":
+		return Playoff, nil
+	}
+	return 0, fmt.Errorf("invalid match type %q", matchTypeString)
+}
+
+// Returns the string equivalent of the given compound match key.
+func (key TbaMatchKey) String() string {
+	if key.SetNumber == 0 {
+		return fmt.Sprintf("%s%d", key.CompLevel, key.MatchNumber)
+	}
+	return fmt.Sprintf("%s%dm%d", key.CompLevel, key.SetNumber, key.MatchNumber)
 }

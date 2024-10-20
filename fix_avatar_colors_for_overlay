@@ -7,7 +7,7 @@ REPLACEMENT_COLOR="#222"
 
 echo "This script will replace color $COLOR_TO_REPLACE with $REPLACEMENT_COLOR in the following files:"
 echo
-cd ./static/img/avatars
+cd ./static/img/sponsors
 ls *.png
 echo
 echo "Press enter to continue or CTRL-C to cancel."
@@ -15,5 +15,5 @@ read
 
 for f in *.png
 do
-  convert $f -fill $REPLACEMENT_COLOR -fuzz 10% -opaque $COLOR_TO_REPLACE $f
+  convert $f -fill $REPLACEMENT_COLOR -fuzz 20% -opaque $COLOR_TO_REPLACE $f
 done

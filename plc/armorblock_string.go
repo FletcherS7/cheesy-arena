@@ -10,13 +10,14 @@ func _() {
 	var x [1]struct{}
 	_ = x[redDs-0]
 	_ = x[blueDs-1]
-	_ = x[hub-2]
-	_ = x[armorBlockCount-3]
+	_ = x[redIoLink-2]
+	_ = x[blueIoLink-3]
+	_ = x[armorBlockCount-4]
 }
 
-const _armorBlock_name = "redDsblueDshubarmorBlockCount"
+const _armorBlock_name = "redDsblueDsredIoLinkblueIoLinkarmorBlockCount"
 
-var _armorBlock_index = [...]uint8{0, 5, 11, 14, 29}
+var _armorBlock_index = [...]uint8{0, 5, 11, 20, 30, 45}
 
 func (i armorBlock) String() string {
 	if i < 0 || i >= armorBlock(len(_armorBlock_index)-1) {

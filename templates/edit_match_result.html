@@ -7,16 +7,17 @@
 {{define "title"}}Edit Match Results{{end}}
 {{define "body"}}
 <div class="row">
-  <div class="well">
-    <form class="form-horizontal" method="POST">
+  <div class="card card-body bg-body-tertiary">
+    <form method="POST">
       <fieldset>
-        <legend>Edit Match {{.Match.DisplayName}} Results</legend>
-        <div class="col-lg-6" id="redScore"></div>
-        <div class="col-lg-6" id="blueScore"></div>
-        <div class="row form-group">
+        <legend>Edit {{.Match.LongName}} Results</legend>
+        <div id="redScore"></div>
+        <div id="blueScore"></div>
+        <div class="row">
           <div class="text-center col-lg-12">
-            <a href="/match_review"><button type="button" class="btn btn-default">Cancel</button></a>
-            <button type="submit" class="btn btn-info">Save</button>
+            <a href="{{if .IsCurrentMatch}}/match_play{{else}}/match_review{{end}}"><button type="button"
+              class="btn btn-secondary">Cancel</button></a>
+            <button type="submit" class="btn btn-primary">Save</button>
           </div>
         </div>
       </fieldset>
@@ -24,107 +25,168 @@
   </div>
 </div>
 <div id="scoreTemplate" style="display: none;">
-  <div class="well well-{{"{{alliance}}"}}">
+  <div class="card card-body bg-{{"{{alliance}}"}} mb-3">
     <fieldset>
       <legend>Autonomous</legend>
-      <b>Taxi</b>
-      <div class="form-group">
-        <div class="row">
-          {{range $i := seq 3}}
-            <div class="col-lg-4">
-              <label class="col-lg-8 control-label">Team {{"{{team"}}{{$i}}{{"}}"}}</label>
-              <input type="checkbox" class="input-sm" name="{{"{{alliance}}"}}TaxiStatuses{{$i}}">
-            </div>
-          {{end}}
+      <h6 class="fw-bold mb-2">Leave</h6>
+      <div class="row mb-3">
+        {{range $i := seq 3}}
+          <div class="col-lg-2">
+            <label class="control-label">Team {{"{{team"}}{{$i}}{{"}}"}}</label>
+            <input type="checkbox" class="ms-3" name="{{"{{alliance}}"}}LeaveStatuses{{$i}}">
+          </div>
+        {{end}}
+      </div>
+      <h6 class="fw-bold mb-2">Notes Scored</h6>
+      <div class="row">
+        <label class="col-lg-1 text-end">Amp:</label>
+        <div class="col-lg-1">
+          <input type="text" class="form-control input-sm" name="{{"{{alliance}}"}}AutoAmpNotes">
+        </div>
+        <label class="col-lg-1 text-end">Speaker:</label>
+        <div class="col-lg-1">
+          <input type="text" class="form-control input-sm" name="{{"{{alliance}}"}}AutoSpeakerNotes">
         </div>
       </div>
-      <b>Cargo</b>
-      {{template "hub" dict "period" "Auto"}}
     </fieldset>
     <fieldset>
       <legend>Teleoperated</legend>
-      <b>Cargo</b>
-      {{template "hub" dict "period" "Teleop"}}
+      <h6 class="fw-bold mb-2">Coopertition</h6>
+      <div class="row mb-3">
+        <div class="col-lg-2">
+          <label class="control-label">Activated</label>
+          <input type="checkbox" class="ms-3" name="{{"{{alliance}}"}}CoopActivated">
+        </div>
+      </div>
+      <h6 class="fw-bold mb-2">Notes Scored</h6>
+      <div class="row">
+        <label class="col-lg-1 text-end">Amp:</label>
+        <div class="col-lg-1">
+          <input type="text" class="form-control input-sm" name="{{"{{alliance}}"}}TeleopAmpNotes">
+        </div>
+        <label class="col-lg-2 text-end">Speaker Unamplified:</label>
+        <div class="col-lg-1">
+          <input type="text" class="form-control input-sm" name="{{"{{alliance}}"}}TeleopUnamplifiedSpeakerNotes">
+        </div>
+        <label class="col-lg-2 text-end">Speaker Amplified:</label>
+        <div class="col-lg-1">
+          <input type="text" class="form-control input-sm" name="{{"{{alliance}}"}}TeleopAmplifiedSpeakerNotes">
+        </div>
+      </div>
     </fieldset>
     <fieldset>
       <legend>Endgame</legend>
-      <b>Robot Status</b>
-      <div class="form-group">
+      <h6 class="fw-bold mb-2">Robots On Stage</h6>
+      <div class="mb-3">
         {{range $i := seq 3}}
-          <div class="row">
-            <label class="col-lg-1 col-lg-offset-1 control-label">{{"{{team"}}{{$i}}{{"}}"}}</label>
-            <div class="radio col-lg-2">
-              <input type="radio" name="{{"{{alliance}}"}}EndgameStatuses{{$i}}" value="0">None
+          <div class="row mb-2">
+            <div class="col-lg-1"></div>
+            <label class="col-lg-1 control-label">Team {{"{{team"}}{{$i}}{{"}}"}}</label>
+            <div class="col-lg-1">
+              <input type="radio" name="{{"{{alliance}}"}}EndgameStatuses{{$i}}" value="0"> None
             </div>
-            <div class="radio col-lg-2">
-              <input type="radio" name="{{"{{alliance}}"}}EndgameStatuses{{$i}}" value="1">Low
+            <div class="col-lg-2">
+              <input type="radio" name="{{"{{alliance}}"}}EndgameStatuses{{$i}}" value="1"> Parked
             </div>
-            <div class="radio col-lg-2">
-              <input type="radio" name="{{"{{alliance}}"}}EndgameStatuses{{$i}}" value="2">Mid
+            <div class="col-lg-2">
+              <input type="radio" name="{{"{{alliance}}"}}EndgameStatuses{{$i}}" value="2"> Stage Left
             </div>
-            <div class="radio col-lg-2">
-              <input type="radio" name="{{"{{alliance}}"}}EndgameStatuses{{$i}}" value="3">High
+            <div class="col-lg-2">
+              <input type="radio" name="{{"{{alliance}}"}}EndgameStatuses{{$i}}" value="3"> Center Stage
             </div>
-            <div class="radio col-lg-2">
-              <input type="radio" name="{{"{{alliance}}"}}EndgameStatuses{{$i}}" value="4">Traversal
+            <div class="col-lg-2">
+              <input type="radio" name="{{"{{alliance}}"}}EndgameStatuses{{$i}}" value="4"> Stage Right
             </div>
           </div>
         {{end}}
+      </div>
+      <h6 class="fw-bold mb-2">High Notes on Microphones</h6>
+      <div class="row mb-3">
+        <div class="col-lg-2">
+          <label class="control-label">Stage Left</label>
+          <input type="checkbox" class="ms-3" name="{{"{{alliance}}"}}MicrophoneStatuses1">
+        </div>
+        <div class="col-lg-2">
+          <label class="control-label">Center Stage</label>
+          <input type="checkbox" class="ms-3" name="{{"{{alliance}}"}}MicrophoneStatuses2">
+        </div>
+        <div class="col-lg-2">
+          <label class="control-label">Stage Right</label>
+          <input type="checkbox" class="ms-3" name="{{"{{alliance}}"}}MicrophoneStatuses3">
+        </div>
+      </div>
+      <h6 class="fw-bold mb-2">Notes in Traps</h6>
+      <div class="row mb-3">
+        <div class="col-lg-2">
+          <label class="control-label">Stage Left</label>
+          <input type="checkbox" class="ms-3" name="{{"{{alliance}}"}}TrapStatuses1">
+        </div>
+        <div class="col-lg-2">
+          <label class="control-label">Center Stage</label>
+          <input type="checkbox" class="ms-3" name="{{"{{alliance}}"}}TrapStatuses2">
+        </div>
+        <div class="col-lg-2">
+          <label class="control-label">Stage Right</label>
+          <input type="checkbox" class="ms-3" name="{{"{{alliance}}"}}TrapStatuses3">
+        </div>
       </div>
     </fieldset>
     <fieldset>
       <legend>Fouls</legend>
       {{"{{#each score.Fouls}}"}}
-        <div class="well well-sm well-dark{{"{{../alliance}}"}}">
-          <button type="button" class="close" onclick="deleteFoul('{{"{{../alliance}}"}}', {{"{{@index}}"}});">
-            ×
+        <input type="hidden" class="input-sm" name="{{"{{../alliance}}"}}Foul{{"{{@index}}"}}Index"
+          value="{{"{{@index}}"}}">
+        <div class="card card-body bg-dark-{{"{{../alliance}}"}} mb-2">
+          <button type="button" class="btn-close" onclick="deleteFoul('{{"{{../alliance}}"}}', {{"{{@index}}"}});">
           </button>
           <br />
-          <div class="form-group">
-            <label class="col-lg-4 control-label">Team</label>
+          <div class="row mb-3">
+            <label class="col-lg-2 control-label">Is Technical?</label>
+            <div class="col-lg-3">
+              <input type="checkbox" class="input-sm" name="{{"{{../alliance}}"}}Foul{{"{{@index}}"}}IsTechnical">
+            </div>
+          </div>
+          <div class="row mb-3">
+            <label class="col-lg-2 control-label">Team</label>
             <div class="col-lg-8">
-              <div class="radio col-lg-3">
-                <label>
-                  <input type="radio" name="{{"{{../alliance}}"}}Foul{{"{{@index}}"}}Team" value="{{"{{../team1}}"}}">
-                  {{"{{../team1}}"}}
-                 </label>
-              </div>
-              <div class="radio col-lg-3">
-                <label>
-                  <input type="radio" name="{{"{{../alliance}}"}}Foul{{"{{@index}}"}}Team" value="{{"{{../team2}}"}}">
-                  {{"{{../team2}}"}}
-                </label>
-              </div>
-              <div class="radio col-lg-3">
-                <label>
-                  <input type="radio" name="{{"{{../alliance}}"}}Foul{{"{{@index}}"}}Team" value="{{"{{../team3}}"}}">
-                  {{"{{../team3}}"}}
-                </label>
+              <div class="row">
+                <div class="col-lg-2">
+                  <label>
+                    <input type="radio" name="{{"{{../alliance}}"}}Foul{{"{{@index}}"}}Team" value="{{"{{../team1}}"}}">
+                    Team {{"{{../team1}}"}}
+                   </label>
+                </div>
+                <div class="col-lg-2">
+                  <label>
+                    <input type="radio" name="{{"{{../alliance}}"}}Foul{{"{{@index}}"}}Team" value="{{"{{../team2}}"}}">
+                    Team {{"{{../team2}}"}}
+                  </label>
+                </div>
+                <div class="col-lg-2">
+                  <label>
+                    <input type="radio" name="{{"{{../alliance}}"}}Foul{{"{{@index}}"}}Team" value="{{"{{../team3}}"}}">
+                    Team {{"{{../team3}}"}}
+                  </label>
+                </div>
               </div>
             </div>
           </div>
-          <div class="form-group">
-            <label class="col-lg-4 control-label">Rule</label>
-            <div class="col-lg-7">
+          <div class="row mb-3">
+            <label class="col-lg-2 control-label">Rule</label>
+            <div class="col-lg-9">
               <select class="form-control" name="{{"{{../alliance}}"}}Foul{{"{{@index}}"}}RuleId">
                 {{range $rule := .Rules}}
                   <option value="{{$rule.Id}}">{{$rule.RuleNumber}}
-                      [{{if $rule.IsRankingPoint}}Free RP{{else}}{{if $rule.IsTechnical}}Tech {{end}}Foul{{end}}]:
-                      {{$rule.Description}}
+                      [{{if $rule.IsRankingPoint}}{{if $rule.IsTechnical}}Tech {{end}}Foul +
+                      Free RP{{else}}{{if $rule.IsTechnical}}Tech {{end}}Foul{{end}}]: {{$rule.Description}}
                   </option>
                 {{end}}
               </select>
             </div>
           </div>
-          <div class="form-group">
-            <label class="col-lg-4 control-label">Seconds Into Match</label>
-            <div class="col-lg-3">
-              <input type="text" class="form-control input-sm" name="{{"{{../alliance}}"}}Foul{{"{{@index}}"}}Time">
-            </div>
-          </div>
         </div>
       {{"{{/each}}"}}
-      <button type="button" class="btn btn-default btn-sm" onclick="addFoul('{{"{{alliance}}"}}');">
+      <button type="button" class="btn btn-secondary btn-sm" onclick="addFoul('{{"{{alliance}}"}}');">
         Add Foul
       </button>
       <br /><br />
@@ -132,26 +194,34 @@
     <fieldset>
       <legend>Cards</legend>
       {{range $i := seq 3}}
-        <div class="form-group">
-          <label class="col-lg-4 control-label">Team {{"{{team"}}{{$i}}{{"}}"}}</label>
+        <div class="row mb-3">
+          <label class="col-lg-2 control-label">Team {{"{{team"}}{{$i}}{{"}}"}}</label>
           <div class="col-lg-8">
-            <div class="radio col-lg-3">
-              <label>
-                <input type="radio" name="{{"{{alliance}}"}}Team{{"{{team"}}{{$i}}{{"}}"}}Card" value="" checked>
-                None
-              </label>
-            </div>
-            <div class="radio col-lg-3">
-              <label>
-                <input type="radio" name="{{"{{alliance}}"}}Team{{"{{team"}}{{$i}}{{"}}"}}Card" value="yellow">
-                Yellow
-              </label>
-            </div>
-            <div class="radio col-lg-6">
-              <label>
-                <input type="radio" name="{{"{{alliance}}"}}Team{{"{{team"}}{{$i}}{{"}}"}}Card" value="red">
-                Red
-              </label>
+            <div class="row">
+              <div class="col-lg-2">
+                <label>
+                  <input type="radio" name="{{"{{alliance}}"}}Team{{"{{team"}}{{$i}}{{"}}"}}Card" value="" checked>
+                  None
+                </label>
+              </div>
+              <div class="col-lg-2">
+                <label>
+                  <input type="radio" name="{{"{{alliance}}"}}Team{{"{{team"}}{{$i}}{{"}}"}}Card" value="yellow">
+                  Yellow
+                </label>
+              </div>
+              <div class="col-lg-2">
+                <label>
+                  <input type="radio" name="{{"{{alliance}}"}}Team{{"{{team"}}{{$i}}{{"}}"}}Card" value="red">
+                  Red
+                </label>
+              </div>
+              <div class="col-lg-2">
+                <label>
+                  <input type="radio" name="{{"{{alliance}}"}}Team{{"{{team"}}{{$i}}{{"}}"}}Card" value="dq">
+                  DQ
+                </label>
+              </div>
             </div>
           </div>
         </div>
@@ -172,33 +242,4 @@
   renderResults("red");
   renderResults("blue");
 </script>
-{{end}}
-{{define "hub"}}
-  <div class="form-group">
-    <div class="row">
-      <label class="col-lg-2 col-lg-offset-3 text-center">Blue</label>
-      <label class="col-lg-2 text-center">Far</label>
-      <label class="col-lg-2 text-center">Near</label>
-      <label class="col-lg-2 text-center">Red</label>
-    </div>
-    {{template "hubLevel" dict "period" .period "goal" "Upper"}}
-    {{template "hubLevel" dict "period" .period "goal" "Lower"}}
-  </div>
-{{end}}
-{{define "hubLevel"}}
-  <div class="row">
-    <label class="col-lg-2 col-lg-offset-1">{{.goal}}</label>
-    <div class="col-lg-2">
-      <input type="text" class="form-control input-sm" name="{{"{{alliance}}"}}{{$.period}}Cargo{{$.goal}}0">
-    </div>
-    <div class="col-lg-2">
-      <input type="text" class="form-control input-sm" name="{{"{{alliance}}"}}{{$.period}}Cargo{{$.goal}}1">
-    </div>
-    <div class="col-lg-2">
-      <input type="text" class="form-control input-sm" name="{{"{{alliance}}"}}{{$.period}}Cargo{{$.goal}}2">
-    </div>
-    <div class="col-lg-2">
-      <input type="text" class="form-control input-sm" name="{{"{{alliance}}"}}{{$.period}}Cargo{{$.goal}}3">
-    </div>
-  </div>
 {{end}}

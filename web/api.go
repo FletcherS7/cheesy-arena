@@ -11,8 +11,8 @@ import (
 	"github.com/Team254/cheesy-arena/game"
 	"github.com/Team254/cheesy-arena/model"
 	"github.com/Team254/cheesy-arena/partner"
+	"github.com/Team254/cheesy-arena/playoff"
 	"github.com/Team254/cheesy-arena/websocket"
-	"github.com/gorilla/mux"
 	"io"
 	"net/http"
 	"os"
@@ -36,9 +36,7 @@ type RankingWithNickname struct {
 }
 
 type allianceMatchup struct {
-	Round              int
-	Group              int
-	DisplayName        string
+	Id                 string
 	RedAllianceSource  string
 	BlueAllianceSource string
 	RedAlliance        *model.Alliance
@@ -51,8 +49,13 @@ type allianceMatchup struct {
 
 // Generates a JSON dump of the matches and results.
 func (web *Web) matchesApiHandler(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	matches, err := web.arena.Database.GetMatchesByType(vars["type"])
+	matchType, err := model.MatchTypeFromString(r.PathValue("type"))
+	if err != nil {
+		handleWebErr(w, err)
+		return
+	}
+
+	matches, err := web.arena.Database.GetMatchesByType(matchType, false)
 	if err != nil {
 		handleWebErr(w, err)
 		return
@@ -145,22 +148,22 @@ func (web *Web) rankingsApiHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Get the last match scored so we can report that on the display.
-	matches, err := web.arena.Database.GetMatchesByType("qualification")
+	matches, err := web.arena.Database.GetMatchesByType(model.Qualification, false)
 	if err != nil {
 		handleWebErr(w, err)
 		return
 	}
-	highestPlayedMatch := ""
+	var highestPlayedMatch model.Match
 	for _, match := range matches {
 		if match.IsComplete() {
-			highestPlayedMatch = match.DisplayName
+			highestPlayedMatch = match
 		}
 	}
 
 	data := struct {
 		Rankings           []RankingWithNickname
 		HighestPlayedMatch string
-	}{rankingsWithNicknames, highestPlayedMatch}
+	}{rankingsWithNicknames, highestPlayedMatch.ShortName}
 	jsonData, err := json.MarshalIndent(data, "", "  ")
 	if err != nil {
 		handleWebErr(w, err)
@@ -212,8 +215,7 @@ func (web *Web) arenaWebsocketApiHandler(w http.ResponseWriter, r *http.Request)
 
 // Serves the avatar for a given team, or a default if none exists.
 func (web *Web) teamAvatarsApiHandler(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	teamId, err := strconv.Atoi(vars["teamId"])
+	teamId, err := strconv.Atoi(r.PathValue("teamId"))
 	if err != nil {
 		handleWebErr(w, err)
 		return
@@ -229,36 +231,36 @@ func (web *Web) teamAvatarsApiHandler(w http.ResponseWriter, r *http.Request) {
 
 func (web *Web) bracketSvgApiHandler(w http.ResponseWriter, r *http.Request) {
 	var activeMatch *model.Match
-	showTemporaryConnectors := false
 	if activeMatchValue, ok := r.URL.Query()["activeMatch"]; ok {
 		if activeMatchValue[0] == "current" {
 			activeMatch = web.arena.CurrentMatch
 		} else if activeMatchValue[0] == "saved" {
 			activeMatch = web.arena.SavedMatch
-			showTemporaryConnectors = true
 		}
 	}
 
 	w.Header().Set("Content-Type", "image/svg+xml")
-	if err := web.generateBracketSvg(w, activeMatch, showTemporaryConnectors); err != nil {
+	if err := web.generateBracketSvg(w, activeMatch); err != nil {
 		handleWebErr(w, err)
 		return
 	}
 }
 
-func (web *Web) generateBracketSvg(w io.Writer, activeMatch *model.Match, showTemporaryConnectors bool) error {
+func (web *Web) generateBracketSvg(w io.Writer, activeMatch *model.Match) error {
 	alliances, err := web.arena.Database.GetAllAlliances()
 	if err != nil {
 		return err
 	}
 
 	matchups := make(map[string]*allianceMatchup)
-	if web.arena.PlayoffBracket != nil {
-		for _, matchup := range web.arena.PlayoffBracket.GetAllMatchups() {
+	if web.arena.PlayoffTournament != nil {
+		for _, matchGroup := range web.arena.PlayoffTournament.MatchGroups() {
+			matchup, ok := matchGroup.(*playoff.Matchup)
+			if !ok {
+				continue
+			}
 			allianceMatchup := allianceMatchup{
-				Round:              matchup.Round,
-				Group:              matchup.Group,
-				DisplayName:        matchup.LongDisplayName(),
+				Id:                 matchup.Id(),
 				RedAllianceSource:  matchup.RedAllianceSourceDisplayName(),
 				BlueAllianceSource: matchup.BlueAllianceSourceDisplayName(),
 				IsComplete:         matchup.IsComplete(),
@@ -278,17 +280,16 @@ func (web *Web) generateBracketSvg(w io.Writer, activeMatch *model.Match, showTe
 				}
 			}
 			if activeMatch != nil {
-				allianceMatchup.IsActive = activeMatch.ElimRound == matchup.Round &&
-					activeMatch.ElimGroup == matchup.Group
+				allianceMatchup.IsActive = activeMatch.PlayoffMatchGroupId == matchup.Id()
 			}
 			allianceMatchup.SeriesLeader, allianceMatchup.SeriesStatus = matchup.StatusText()
-			matchups[fmt.Sprintf("%d_%d", matchup.Round, matchup.Group)] = &allianceMatchup
+			matchups[matchup.Id()] = &allianceMatchup
 		}
 	}
 
 	bracketType := "double"
-	numAlliances := web.arena.EventSettings.NumElimAlliances
-	if web.arena.EventSettings.ElimType == "single" {
+	numAlliances := web.arena.EventSettings.NumPlayoffAlliances
+	if web.arena.EventSettings.PlayoffType == model.SingleEliminationPlayoff {
 		if numAlliances > 8 {
 			bracketType = "16"
 		} else if numAlliances > 4 {
@@ -305,9 +306,8 @@ func (web *Web) generateBracketSvg(w io.Writer, activeMatch *model.Match, showTe
 		return err
 	}
 	data := struct {
-		BracketType             string
-		Matchups                map[string]*allianceMatchup
-		ShowTemporaryConnectors bool
-	}{bracketType, matchups, showTemporaryConnectors}
+		BracketType string
+		Matchups    map[string]*allianceMatchup
+	}{bracketType, matchups}
 	return template.ExecuteTemplate(w, "bracket", data)
 }

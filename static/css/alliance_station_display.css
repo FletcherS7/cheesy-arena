@@ -14,7 +14,7 @@ body {
   color: #fff;
 }
 body[data-mode=logo] {
-  background-color: #FFF;
+  background-color: #000;
 }
 body[data-mode=fieldReset] {
   background-color: #0a3;
@@ -107,6 +107,7 @@ body[data-position=left] #inMatch #redScore {
 }
 body[data-position=middle] #inMatch #timeRemaining {
   display: block;
+  font-size: 32vw;
 }
 body[data-position=right] #inMatch #blueScore {
   display: block;
@@ -120,7 +121,7 @@ body[data-position=right] #inMatch #blueScore {
   left: 0;
   right: 0;
   margin: 0 auto;
-  font-size: 450px;
+  font-size: 28vw;
   line-height: 450px;
   text-align: center;
 }
@@ -159,7 +160,7 @@ body[data-position=right] #inMatch #blueScore {
 #teamRank {
   background-color: transparent;
 }
-#elimAllianceInfo {
+#playoffAllianceInfo {
   position: absolute;
   bottom: 20px;
   left: 0;

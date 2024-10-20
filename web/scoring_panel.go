@@ -8,14 +8,13 @@ package web
 import (
 	"fmt"
 	"github.com/Team254/cheesy-arena/field"
+	"github.com/Team254/cheesy-arena/game"
 	"github.com/Team254/cheesy-arena/model"
 	"github.com/Team254/cheesy-arena/websocket"
-	"github.com/gorilla/mux"
+	"github.com/mitchellh/mapstructure"
 	"io"
 	"log"
 	"net/http"
-	"strconv"
-	"strings"
 )
 
 // Renders the scoring interface which enables input of scores in real-time.
@@ -24,8 +23,7 @@ func (web *Web) scoringPanelHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	vars := mux.Vars(r)
-	alliance := vars["alliance"]
+	alliance := r.PathValue("alliance")
 	if alliance != "red" && alliance != "blue" {
 		handleWebErr(w, fmt.Errorf("Invalid alliance '%s'.", alliance))
 		return
@@ -54,8 +52,7 @@ func (web *Web) scoringPanelWebsocketHandler(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	vars := mux.Vars(r)
-	alliance := vars["alliance"]
+	alliance := r.PathValue("alliance")
 	if alliance != "red" && alliance != "blue" {
 		handleWebErr(w, fmt.Errorf("Invalid alliance '%s'.", alliance))
 		return
@@ -85,7 +82,7 @@ func (web *Web) scoringPanelWebsocketHandler(w http.ResponseWriter, r *http.Requ
 
 	// Loop, waiting for commands and responding to them, until the client closes the connection.
 	for {
-		command, _, err := ws.Read()
+		command, data, err := ws.Read()
 		if err != nil {
 			if err == io.EOF {
 				// Client has closed the connection; nothing to do here.
@@ -94,7 +91,6 @@ func (web *Web) scoringPanelWebsocketHandler(w http.ResponseWriter, r *http.Requ
 			log.Println(err)
 			return
 		}
-
 		score := &(*realtimeScore).CurrentScore
 		scoreChanged := false
 
@@ -106,61 +102,57 @@ func (web *Web) scoringPanelWebsocketHandler(w http.ResponseWriter, r *http.Requ
 			}
 			web.arena.ScoringPanelRegistry.SetScoreCommitted(alliance, ws)
 			web.arena.ScoringStatusNotifier.Notify()
-		} else if number, err := strconv.Atoi(command); err == nil && number >= 1 && number <= 6 {
-			// Handle per-robot scoring fields.
-			if number <= 3 {
-				index := number - 1
-				score.TaxiStatuses[index] = !score.TaxiStatuses[index]
-				scoreChanged = true
-			} else {
-				index := number - 4
-				score.EndgameStatuses[index]++
-				if score.EndgameStatuses[index] == 5 {
-					score.EndgameStatuses[index] = 0
+		} else {
+			args := struct {
+				TeamPosition int
+				StageIndex   int
+			}{}
+			err = mapstructure.Decode(data, &args)
+			if err != nil {
+				ws.WriteError(err.Error())
+				continue
+			}
+
+			switch command {
+			case "leave":
+				if args.TeamPosition >= 1 && args.TeamPosition <= 3 {
+					score.LeaveStatuses[args.TeamPosition-1] = !score.LeaveStatuses[args.TeamPosition-1]
+					scoreChanged = true
 				}
-				scoreChanged = true
-			}
-		} else if !web.arena.Plc.IsEnabled() {
-			switch strings.ToUpper(command) {
-			case "Q":
-				scoreChanged = decrementGoal(score.AutoCargoUpper[:])
-			case "A":
-				scoreChanged = decrementGoal(score.AutoCargoLower[:])
-			case "W":
-				scoreChanged = incrementGoal(score.AutoCargoUpper[:])
-			case "S":
-				scoreChanged = incrementGoal(score.AutoCargoLower[:])
-			case "E":
-				scoreChanged = decrementGoal(score.TeleopCargoUpper[:])
-			case "D":
-				scoreChanged = decrementGoal(score.TeleopCargoLower[:])
-			case "R":
-				scoreChanged = incrementGoal(score.TeleopCargoUpper[:])
-			case "F":
-				scoreChanged = incrementGoal(score.TeleopCargoLower[:])
+			case "onStage":
+				if args.TeamPosition >= 1 && args.TeamPosition <= 3 && args.StageIndex >= 0 && args.StageIndex <= 2 {
+					endgameStatus := game.EndgameStatus(args.StageIndex + 2)
+					if score.EndgameStatuses[args.TeamPosition-1] == endgameStatus {
+						score.EndgameStatuses[args.TeamPosition-1] = game.EndgameNone
+					} else {
+						score.EndgameStatuses[args.TeamPosition-1] = endgameStatus
+					}
+					scoreChanged = true
+				}
+			case "park":
+				if args.TeamPosition >= 1 && args.TeamPosition <= 3 {
+					if score.EndgameStatuses[args.TeamPosition-1] == game.EndgameParked {
+						score.EndgameStatuses[args.TeamPosition-1] = game.EndgameNone
+					} else {
+						score.EndgameStatuses[args.TeamPosition-1] = game.EndgameParked
+					}
+					scoreChanged = true
+				}
+			case "microphone":
+				if args.StageIndex >= 0 && args.StageIndex <= 2 {
+					score.MicrophoneStatuses[args.StageIndex] = !score.MicrophoneStatuses[args.StageIndex]
+					scoreChanged = true
+				}
+			case "trap":
+				if args.StageIndex >= 0 && args.StageIndex <= 2 {
+					score.TrapStatuses[args.StageIndex] = !score.TrapStatuses[args.StageIndex]
+					scoreChanged = true
+				}
 			}
 
-		}
-
-		if scoreChanged {
-			web.arena.RealtimeScoreNotifier.Notify()
+			if scoreChanged {
+				web.arena.RealtimeScoreNotifier.Notify()
+			}
 		}
 	}
-}
-
-// Increments the cargo count for the given goal.
-func incrementGoal(goal []int) bool {
-	// Use just the first hub quadrant for manual scoring.
-	goal[0]++
-	return true
-}
-
-// Decrements the cargo for the given goal.
-func decrementGoal(goal []int) bool {
-	// Use just the first hub quadrant for manual scoring.
-	if goal[0] > 0 {
-		goal[0]--
-		return true
-	}
-	return false
 }

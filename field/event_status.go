@@ -7,20 +7,26 @@ package field
 
 import (
 	"fmt"
+	"github.com/Team254/cheesy-arena/model"
 	"math"
 	"time"
 )
 
+const maxExpectedCycleTimeSec = 900
+
 type EventStatus struct {
-	CycleTime          string
-	EarlyLateMessage   string
-	lastMatchStartTime time.Time
+	CycleTime                   string
+	EarlyLateMessage            string
+	lastMatchStartTime          time.Time
+	lastMatchScheduledStartTime time.Time
 }
 
 // Calculates the last cycle time and publishes an update to the displays that show it.
 func (arena *Arena) updateCycleTime(matchStartTime time.Time) {
-	if arena.EventStatus.lastMatchStartTime.IsZero() {
-		// We don't know when the previous match was started.
+	expectedCycleTimeSec := arena.CurrentMatch.Time.Sub(arena.EventStatus.lastMatchScheduledStartTime).Seconds()
+	if arena.EventStatus.lastMatchStartTime.IsZero() || expectedCycleTimeSec > maxExpectedCycleTimeSec ||
+		arena.CurrentMatch.Type == model.Test {
+		// We don't know when the previous match was started or there was a big gap that we shouldn't count.
 		arena.EventStatus.CycleTime = ""
 	} else {
 		cycleTimeSec := int(matchStartTime.Sub(arena.EventStatus.lastMatchStartTime).Seconds())
@@ -32,8 +38,21 @@ func (arena *Arena) updateCycleTime(matchStartTime time.Time) {
 		} else {
 			arena.EventStatus.CycleTime = fmt.Sprintf("%d:%02d", minutes, seconds)
 		}
+
+		deltaSec := cycleTimeSec - int(expectedCycleTimeSec)
+		var direction string
+		if deltaSec > 0 {
+			direction = "slower"
+		} else {
+			direction = "faster"
+			deltaSec = -deltaSec
+		}
+		arena.EventStatus.CycleTime += fmt.Sprintf(
+			" (%d:%02d %s than scheduled)", deltaSec/60, deltaSec%60, direction,
+		)
 	}
 	arena.EventStatus.lastMatchStartTime = matchStartTime
+	arena.EventStatus.lastMatchScheduledStartTime = arena.CurrentMatch.Time
 	arena.EventStatusNotifier.Notify()
 }
 
@@ -49,8 +68,7 @@ func (arena *Arena) updateEarlyLateMessage() {
 // Updates the string that indicates how early or late the event is running.
 func (arena *Arena) getEarlyLateMessage() string {
 	currentMatch := arena.CurrentMatch
-	if currentMatch.Type != "practice" && currentMatch.Type != "qualification" {
-		// Only practice and qualification matches have a strict schedule.
+	if currentMatch.Type == model.Test {
 		return ""
 	}
 	if currentMatch.IsComplete() {
@@ -64,7 +82,7 @@ func (arena *Arena) getEarlyLateMessage() string {
 		minutesLate = currentMatch.StartedAt.Sub(currentMatch.Time).Minutes()
 	} else {
 		// We need to check the adjacent matches to accurately determine lateness.
-		matches, _ := arena.Database.GetMatchesByType(currentMatch.Type)
+		matches, _ := arena.Database.GetMatchesByType(currentMatch.Type, false)
 
 		previousMatchIndex := -1
 		nextMatchIndex := len(matches)
@@ -76,7 +94,7 @@ func (arena *Arena) getEarlyLateMessage() string {
 			}
 		}
 
-		if arena.MatchState == PreMatch {
+		if arena.MatchState == PreMatch || arena.MatchState == TimeoutActive || arena.MatchState == PostTimeout {
 			currentMinutesLate := time.Now().Sub(currentMatch.Time).Minutes()
 			if previousMatchIndex >= 0 &&
 				currentMatch.Time.Sub(matches[previousMatchIndex].Time).Minutes() <= MaxMatchGapMin {

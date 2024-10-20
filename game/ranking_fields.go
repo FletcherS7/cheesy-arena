@@ -8,16 +8,17 @@ package game
 import "math/rand"
 
 type RankingFields struct {
-	RankingPoints          int
-	MatchPoints            int
-	HangarPoints           int
-	TaxiAndAutoCargoPoints int
-	Random                 float64
-	Wins                   int
-	Losses                 int
-	Ties                   int
-	Disqualifications      int
-	Played                 int
+	RankingPoints      int
+	CoopertitionPoints int
+	MatchPoints        int
+	AutoPoints         int
+	StagePoints        int
+	Random             float64
+	Wins               int
+	Losses             int
+	Ties               int
+	Disqualifications  int
+	Played             int
 }
 
 type Ranking struct {
@@ -51,20 +52,15 @@ func (fields *RankingFields) AddScoreSummary(ownScore *ScoreSummary, opponentSco
 	} else {
 		fields.Losses += 1
 	}
-	if ownScore.CargoBonusRankingPoint {
-		fields.RankingPoints += 1
-	}
-	if ownScore.HangarBonusRankingPoint {
-		fields.RankingPoints += 1
-	}
-	if ownScore.DoubleBonusRankingPoint {
-		fields.RankingPoints += 1
-	}
+	fields.RankingPoints += ownScore.BonusRankingPoints
 
 	// Assign tiebreaker points.
+	if ownScore.CoopertitionBonus {
+		fields.CoopertitionPoints++
+	}
 	fields.MatchPoints += ownScore.MatchPoints
-	fields.HangarPoints += ownScore.HangarPoints
-	fields.TaxiAndAutoCargoPoints += ownScore.TaxiPoints + ownScore.AutoCargoPoints
+	fields.AutoPoints += ownScore.AutoPoints
+	fields.StagePoints += ownScore.StagePoints
 }
 
 // Helper function to implement the required interface for Sort.
@@ -79,16 +75,19 @@ func (rankings Rankings) Less(i, j int) bool {
 
 	// Use cross-multiplication to keep it in integer math.
 	if a.RankingPoints*b.Played == b.RankingPoints*a.Played {
-		if a.MatchPoints*b.Played == b.MatchPoints*a.Played {
-			if a.HangarPoints*b.Played == b.HangarPoints*a.Played {
-				if a.TaxiAndAutoCargoPoints*b.Played == b.TaxiAndAutoCargoPoints*a.Played {
-					return a.Random > b.Random
+		if a.CoopertitionPoints*b.Played == b.CoopertitionPoints*a.Played {
+			if a.MatchPoints*b.Played == b.MatchPoints*a.Played {
+				if a.AutoPoints*b.Played == b.AutoPoints*a.Played {
+					if a.StagePoints*b.Played == b.StagePoints*a.Played {
+						return a.Random > b.Random
+					}
+					return a.StagePoints*b.Played > b.StagePoints*a.Played
 				}
-				return a.TaxiAndAutoCargoPoints*b.Played > b.TaxiAndAutoCargoPoints*a.Played
+				return a.AutoPoints*b.Played > b.AutoPoints*a.Played
 			}
-			return a.HangarPoints*b.Played > b.HangarPoints*a.Played
+			return a.MatchPoints*b.Played > b.MatchPoints*a.Played
 		}
-		return a.MatchPoints*b.Played > b.MatchPoints*a.Played
+		return a.CoopertitionPoints*b.Played > b.CoopertitionPoints*a.Played
 	}
 	return a.RankingPoints*b.Played > b.RankingPoints*a.Played
 }

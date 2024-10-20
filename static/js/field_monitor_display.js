@@ -8,6 +8,7 @@ var currentMatchId;
 var redSide;
 var blueSide;
 var lowBatteryThreshold = 8;
+var highBtuThreshold = 7.0;
 
 
 var handleArenaStatus = function(data) {
@@ -17,7 +18,7 @@ var handleArenaStatus = function(data) {
   } else if (currentMatchId !== data.MatchId) {
     location.reload();
   }
-	
+
   $.each(data.AllianceStations, function(station, stationStatus) {
     // Select the DOM elements corresponding to the team station.
     var teamElementPrefix;
@@ -50,6 +51,8 @@ var handleArenaStatus = function(data) {
           status = "wrong-station";
         } else if (stationStatus.DsConn.RobotLinked) {
           status = "robot-linked";
+        } else if (stationStatus.DsConn.RioLinked) {
+          status = "rio-linked";
         } else if (stationStatus.DsConn.RadioLinked) {
           status = "radio-linked";
         } else if (stationStatus.DsConn.DsLinked) {
@@ -74,7 +77,7 @@ var handleArenaStatus = function(data) {
       teamEthernetElement.text("ETH");
     }
 
-    var wifiStatus = data.TeamWifiStatuses[station];
+    const wifiStatus = stationStatus.WifiStatus;
     teamRadioTextElement.text(wifiStatus.TeamId);
 
     if (stationStatus.DsConn) {
@@ -84,7 +87,8 @@ var handleArenaStatus = function(data) {
       teamDsElement.text(dsConn.MissedPacketCount);
 
       // Format the radio status box according to the connection status of the robot radio.
-      var radioOkay = stationStatus.Team && stationStatus.Team.Id === wifiStatus.TeamId && wifiStatus.RadioLinked;
+      var radioOkay = stationStatus.Team && stationStatus.Team.Id === wifiStatus.TeamId &&
+        (wifiStatus.RadioLinked || dsConn.RobotLinked);
       teamRadioElement.attr("data-status-ok", radioOkay);
 
       // Format the robot status box.
@@ -95,12 +99,13 @@ var handleArenaStatus = function(data) {
       } else {
         teamRobotElement.text(dsConn.BatteryVoltage.toFixed(1) + "V");
       }
-      console.log(dsConn.Bandwidth);
-      if (dsConn.Bandwidth > 0.01) {
-        teamBandwidthElement.text(dsConn.Bandwidth.toFixed(1));
-        teamBandwidthElement.attr("data-status-ok", true);
+      var btuOkay = wifiStatus.MBits < highBtuThreshold && dsConn.RobotLinked;
+      if (wifiStatus.MBits >= 0.01) {
+        teamBandwidthElement.text(wifiStatus.MBits.toFixed(2)+ "Mb");
+        teamBandwidthElement.attr("data-status-ok", btuOkay);
       } else {
         teamBandwidthElement.text("-");
+        teamBandwidthElement.attr("data-status-ok", btuOkay);
       }
     } else {
       teamDsElement.attr("data-status-ok", "");
@@ -123,9 +128,12 @@ var handleArenaStatus = function(data) {
       }
     }
 
-    if (stationStatus.Estop) {
+    if (stationStatus.EStop) {
       teamBypassElement.attr("data-status-ok", false);
       teamBypassElement.text("ES");
+    } else if (stationStatus.AStop) {
+      teamBypassElement.attr("data-status-ok", true);
+      teamBypassElement.text("AS");
     } else if (stationStatus.Bypass) {
       teamBypassElement.attr("data-status-ok", false);
       teamBypassElement.text("BYP");
@@ -141,7 +149,12 @@ var handleMatchTime = function(data) {
   translateMatchTime(data, function(matchState, matchStateText, countdownSec) {
     $("#matchState").text(matchStateText);
     $("#matchTime").text(countdownSec);
-    });
+    if (matchStateText === "PRE-MATCH" | matchStateText === "POST-MATCH") {
+      $(".ds-dependent").attr("data-preMatch", "true");
+    } else {
+      $(".ds-dependent").attr("data-preMatch", "false");
+    }
+  });
 };
 
 // Handles a websocket message to update the match score.
@@ -159,7 +172,7 @@ var handleRealtimeScore = function(data,reversed) {
 
 // Handles a websocket message to update current match
 var handleMatchLoad = function(data) {
-  $("#matchName").text(data.MatchType + " Match " + data.Match.DisplayName);
+  $("#matchName").text(data.Match.LongName);
 };
 
 // Handles a websocket message to update the event status message.
@@ -198,9 +211,21 @@ $(function() {
     redSide = "left";
     blueSide = "right";
   }
+
+  //Read if display to be used in a Driver Station, ignore FTA flag if so.
+  var driverStation = urlParams.get("ds");
+  if (driverStation === "true") {
+  $(".fta-dependent").attr("data-fta", "false");
+  $(".ds-dependent").attr("data-ds", driverStation);
+  } else {
+  $(".fta-dependent").attr("data-fta", urlParams.get("fta"));
+  $(".ds-dependent").attr("data-ds", driverStation);
+  }
+
   $(".reversible-left").attr("data-reversed", reversed);
   $(".reversible-right").attr("data-reversed", reversed);
-  $(".fta-dependent").attr("data-fta", urlParams.get("fta"));
+
+
 
   // Set up the websocket back to the server.
   websocket = new CheesyWebsocket("/displays/field_monitor/websocket", {

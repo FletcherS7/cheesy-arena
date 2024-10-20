@@ -7,39 +7,55 @@ package game
 
 func TestScore1() *Score {
 	fouls := []Foul{
-		{13, 25, 150},
-		{14, 1868, 0},
-		{15, 25, 25.2},
+		{true, 25, 13},
+		{false, 1868, 14},
+		{false, 1868, 14},
+		{true, 25, 15},
+		{true, 25, 15},
+		{true, 25, 15},
+		{true, 25, 15},
 	}
 	return &Score{
-		TaxiStatuses:     [3]bool{true, true, false},
-		AutoCargoLower:   [4]int{0, 0, 1, 0},
-		AutoCargoUpper:   [4]int{3, 1, 1, 1},
-		TeleopCargoLower: [4]int{0, 2, 0, 0},
-		TeleopCargoUpper: [4]int{1, 5, 0, 2},
-		EndgameStatuses:  [3]EndgameStatus{EndgameLow, EndgameNone, EndgameTraversal},
-		Fouls:            fouls,
-		ElimDq:           false,
+		LeaveStatuses: [3]bool{true, true, false},
+		AmpSpeaker: AmpSpeaker{
+			CoopActivated:                 true,
+			AutoAmpNotes:                  1,
+			TeleopAmpNotes:                4,
+			AutoSpeakerNotes:              6,
+			TeleopUnamplifiedSpeakerNotes: 1,
+			TeleopAmplifiedSpeakerNotes:   5,
+		},
+		EndgameStatuses:    [3]EndgameStatus{EndgameParked, EndgameNone, EndgameStageLeft},
+		MicrophoneStatuses: [3]bool{false, true, true},
+		TrapStatuses:       [3]bool{true, true, false},
+		Fouls:              fouls,
+		PlayoffDq:          false,
 	}
 }
 
 func TestScore2() *Score {
 	return &Score{
-		TaxiStatuses:     [3]bool{false, true, false},
-		AutoCargoLower:   [4]int{0, 0, 0, 1},
-		AutoCargoUpper:   [4]int{1, 1, 1, 0},
-		TeleopCargoLower: [4]int{2, 0, 2, 7},
-		TeleopCargoUpper: [4]int{2, 7, 0, 1},
-		EndgameStatuses:  [3]EndgameStatus{EndgameNone, EndgameLow, EndgameHigh},
-		Fouls:            []Foul{},
-		ElimDq:           false,
+		LeaveStatuses: [3]bool{false, true, false},
+		AmpSpeaker: AmpSpeaker{
+			CoopActivated:                 false,
+			AutoAmpNotes:                  0,
+			TeleopAmpNotes:                51,
+			AutoSpeakerNotes:              8,
+			TeleopUnamplifiedSpeakerNotes: 3,
+			TeleopAmplifiedSpeakerNotes:   23,
+		},
+		EndgameStatuses:    [3]EndgameStatus{EndgameStageLeft, EndgameCenterStage, EndgameCenterStage},
+		MicrophoneStatuses: [3]bool{false, true, true},
+		TrapStatuses:       [3]bool{false, false, false},
+		Fouls:              []Foul{},
+		PlayoffDq:          false,
 	}
 }
 
 func TestRanking1() *Ranking {
-	return &Ranking{254, 1, 0, RankingFields{20, 625, 90, 554, 0.254, 3, 2, 1, 0, 10}}
+	return &Ranking{254, 1, 0, RankingFields{20, 625, 90, 554, 12, 0.254, 3, 2, 1, 0, 10}}
 }
 
 func TestRanking2() *Ranking {
-	return &Ranking{1114, 2, 1, RankingFields{18, 700, 625, 90, 0.1114, 1, 3, 2, 0, 10}}
+	return &Ranking{1114, 2, 1, RankingFields{18, 700, 625, 90, 23, 0.1114, 1, 3, 2, 0, 10}}
 }

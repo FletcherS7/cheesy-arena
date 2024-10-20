@@ -4,24 +4,24 @@
 // Client-side logic for the scoring interface.
 
 var websocket;
-var alliance;
+let alliance;
 
 // Handles a websocket message to update the teams for the current match.
-var handleMatchLoad = function(data) {
-  $("#matchName").text(data.MatchType + " " + data.Match.DisplayName);
+const handleMatchLoad = function(data) {
+  $("#matchName").text(data.Match.LongName);
   if (alliance === "red") {
-    $("#team1").text(data.Match.Red1);
-    $("#team2").text(data.Match.Red2);
-    $("#team3").text(data.Match.Red3);
+    $(".team-1").text(data.Match.Red1);
+    $(".team-2").text(data.Match.Red2);
+    $(".team-3").text(data.Match.Red3);
   } else {
-    $("#team1").text(data.Match.Blue1);
-    $("#team2").text(data.Match.Blue2);
-    $("#team3").text(data.Match.Blue3);
+    $(".team-1").text(data.Match.Blue1);
+    $(".team-2").text(data.Match.Blue2);
+    $(".team-3").text(data.Match.Blue3);
   }
 };
 
 // Handles a websocket message to update the match status.
-var handleMatchTime = function(data) {
+const handleMatchTime = function(data) {
   switch (matchStates[data.MatchState]) {
     case "PRE_MATCH":
       // Pre-match message state is set in handleRealtimeScore().
@@ -39,59 +39,38 @@ var handleMatchTime = function(data) {
 };
 
 // Handles a websocket message to update the realtime scoring fields.
-var handleRealtimeScore = function(data) {
-  var realtimeScore;
+const handleRealtimeScore = function(data) {
+  let realtimeScore;
   if (alliance === "red") {
     realtimeScore = data.Red;
   } else {
     realtimeScore = data.Blue;
   }
-  var score = realtimeScore.Score;
+  const score = realtimeScore.Score;
 
-  for (var i = 0; i < 3; i++) {
-    var i1 = i + 1;
-    $("#taxiStatus" + i1 + ">.value").text(score.TaxiStatuses[i] ? "Yes" : "No");
-    $("#taxiStatus" + i1).attr("data-value", score.TaxiStatuses[i]);
-    $("#endgameStatus" + i1 + ">.value").text(getEndgameStatusText(score.EndgameStatuses[i]));
-    $("#endgameStatus" + i1).attr("data-value", score.EndgameStatuses[i]);
-    $("#autoCargoLower").text(score.AutoCargoLower[0]);
-    $("#autoCargoUpper").text(score.AutoCargoUpper[0]);
-    $("#teleopCargoLower").text(score.TeleopCargoLower[0]);
-    $("#teleopCargoUpper").text(score.TeleopCargoUpper[0]);
+  for (let i = 0; i < 3; i++) {
+    const i1 = i + 1;
+    $(`#leaveStatus${i1}>.value`).text(score.LeaveStatuses[i] ? "Yes" : "No");
+    $(`#leaveStatus${i1}`).attr("data-value", score.LeaveStatuses[i]);
+    $(`#parkTeam${i1}`).attr("data-value", score.EndgameStatuses[i] === 1);
+    $(`#stageSide0Team${i1}`).attr("data-value", score.EndgameStatuses[i] === 2);
+    $(`#stageSide1Team${i1}`).attr("data-value", score.EndgameStatuses[i] === 3);
+    $(`#stageSide2Team${i1}`).attr("data-value", score.EndgameStatuses[i] === 4);
+    $(`#stageSide${i}Microphone`).attr("data-value", score.MicrophoneStatuses[i]);
+    $(`#stageSide${i}Trap`).attr("data-value", score.TrapStatuses[i]);
   }
-};
-
-// Handles a keyboard event and sends the appropriate websocket message.
-var handleKeyPress = function(event) {
-  websocket.send(String.fromCharCode(event.keyCode));
 };
 
 // Handles an element click and sends the appropriate websocket message.
-var handleClick = function(shortcut) {
-  websocket.send(shortcut);
+const handleClick = function(command, teamPosition = 0, stageIndex = 0) {
+  websocket.send(command, {TeamPosition: teamPosition, StageIndex: stageIndex});
 };
 
 // Sends a websocket message to indicate that the score for this alliance is ready.
-var commitMatchScore = function() {
+const commitMatchScore = function() {
   websocket.send("commitMatch");
   $("#postMatchMessage").css("display", "flex");
   $("#commitMatchScore").hide();
-};
-
-// Returns the display text corresponding to the given integer endgame status value.
-var getEndgameStatusText = function(level) {
-  switch (level) {
-    case 1:
-      return "Low";
-    case 2:
-      return "Mid";
-    case 3:
-      return "High";
-    case 4:
-      return "Traversal";
-    default:
-      return "None";
-  }
 };
 
 $(function() {
@@ -104,6 +83,4 @@ $(function() {
     matchTime: function(event) { handleMatchTime(event.data); },
     realtimeScore: function(event) { handleRealtimeScore(event.data); },
   });
-
-  $(document).keypress(handleKeyPress);
 });

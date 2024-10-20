@@ -34,14 +34,15 @@ type DriverStationConnection struct {
 	AllianceStation           string
 	Auto                      bool
 	Enabled                   bool
-	Estop                     bool
+	EStop                     bool
+	AStop                     bool
 	DsLinked                  bool
 	RadioLinked               bool
+	RioLinked                 bool
 	RobotLinked               bool
 	BatteryVoltage            float64
 	DsRobotTripTimeMs         int
 	MissedPacketCount         int
-	Bandwidth                 float32
 	SecondsSinceLastRobotLink float64
 	lastPacketTime            time.Time
 	lastRobotLinkedTime       time.Time
@@ -101,6 +102,7 @@ func (arena *Arena) listenForDsUdpPackets() {
 			dsConn.DsLinked = true
 			dsConn.lastPacketTime = time.Now()
 
+			dsConn.RioLinked = data[3]&0x08 != 0
 			dsConn.RadioLinked = data[3]&0x10 != 0
 			dsConn.RobotLinked = data[3]&0x20 != 0
 			if dsConn.RobotLinked {
@@ -108,17 +110,6 @@ func (arena *Arena) listenForDsUdpPackets() {
 
 				// Robot battery voltage, stored as volts * 256.
 				dsConn.BatteryVoltage = float64(data[6]) + float64(data[7])/256
-
-			        rawBw := data[9:11]
-
-			        bw := uint16(rawBw[0]) << 8
-			        bw |= uint16(rawBw[1])
-
-			        dsConn.Bandwidth = float32(bw) / 256.0
-
-
-
-
 			}
 		}
 	}
@@ -134,6 +125,7 @@ func (dsConn *DriverStationConnection) update(arena *Arena) error {
 	if time.Since(dsConn.lastPacketTime).Seconds() > driverStationUdpLinkTimeoutSec {
 		dsConn.DsLinked = false
 		dsConn.RadioLinked = false
+		dsConn.RioLinked = false
 		dsConn.RobotLinked = false
 		dsConn.BatteryVoltage = 0
 	}
@@ -155,11 +147,11 @@ func (dsConn *DriverStationConnection) close() {
 }
 
 // Called at the start of the match to allow for driver station initialization.
-func (dsConn *DriverStationConnection) signalMatchStart(match *model.Match) error {
+func (dsConn *DriverStationConnection) signalMatchStart(match *model.Match, wifiStatus *network.TeamWifiStatus) error {
 	// Zero out missed packet count and begin logging.
 	dsConn.missedPacketOffset = dsConn.MissedPacketCount
 	var err error
-	dsConn.log, err = NewTeamMatchLog(dsConn.TeamId, match)
+	dsConn.log, err = NewTeamMatchLog(dsConn.TeamId, match, wifiStatus)
 	return err
 }
 
@@ -182,8 +174,11 @@ func (dsConn *DriverStationConnection) encodeControlPacket(arena *Arena) [22]byt
 	if dsConn.Enabled {
 		packet[3] |= 0x04
 	}
-	if dsConn.Estop {
+	if dsConn.EStop {
 		packet[3] |= 0x80
+	}
+	if dsConn.AStop {
+		packet[3] |= 0x40
 	}
 
 	// Unknown or unused.
@@ -194,30 +189,20 @@ func (dsConn *DriverStationConnection) encodeControlPacket(arena *Arena) [22]byt
 
 	// Match type.
 	match := arena.CurrentMatch
-	if match.Type == "practice" {
+	switch match.Type {
+	case model.Practice:
 		packet[6] = 1
-	} else if match.Type == "qualification" {
+	case model.Qualification:
 		packet[6] = 2
-	} else if match.Type == "elimination" {
+	case model.Playoff:
 		packet[6] = 3
-	} else {
+	default:
 		packet[6] = 0
 	}
 
 	// Match number.
-	if match.Type == "practice" || match.Type == "qualification" {
-		matchNumber, _ := strconv.Atoi(match.DisplayName)
-		packet[7] = byte(matchNumber >> 8)
-		packet[8] = byte(matchNumber & 0xff)
-	} else if match.Type == "elimination" {
-		// E.g. Quarter-final 3, match 1 will be numbered 431.
-		matchNumber := match.ElimRound*100 + match.ElimGroup*10 + match.ElimInstance
-		packet[7] = byte(matchNumber >> 8)
-		packet[8] = byte(matchNumber & 0xff)
-	} else {
-		packet[7] = 0
-		packet[8] = 1
-	}
+	packet[7] = byte(match.TypeOrder >> 8)
+	packet[8] = byte(match.TypeOrder & 0xff)
 	packet[9] = 1 // Match repeat number
 
 	// Current time.
@@ -236,15 +221,9 @@ func (dsConn *DriverStationConnection) encodeControlPacket(arena *Arena) [22]byt
 	// Remaining number of seconds in match.
 	var matchSecondsRemaining int
 	switch arena.MatchState {
-	case PreMatch:
-		fallthrough
-	case TimeoutActive:
-		fallthrough
-	case PostTimeout:
+	case PreMatch, TimeoutActive, PostTimeout:
 		matchSecondsRemaining = game.MatchTiming.AutoDurationSec
-	case StartMatch:
-		fallthrough
-	case AutoPeriod:
+	case StartMatch, AutoPeriod:
 		matchSecondsRemaining = game.MatchTiming.AutoDurationSec - int(arena.MatchTimeSec())
 	case PausePeriod:
 		matchSecondsRemaining = game.MatchTiming.TeleopDurationSec
@@ -283,7 +262,6 @@ func (dsConn *DriverStationConnection) decodeStatusPacket(data [36]byte) {
 
 	// Number of missed packets sent from the DS to the robot.
 	dsConn.MissedPacketCount = int(data[2]) - dsConn.missedPacketOffset
-
 }
 
 // Listens for TCP connection requests to Cheesy Arena from driver stations.
@@ -393,19 +371,22 @@ func (dsConn *DriverStationConnection) handleTcpConnection(arena *Arena) {
 
 		packetType := int(buffer[2])
 		switch packetType {
-		case 28:
+		case 29:
 			// DS keepalive packet; do nothing.
+			continue
 		case 22:
 			// Robot status packet.
 			var statusPacket [36]byte
 			copy(statusPacket[:], buffer[2:38])
 			dsConn.decodeStatusPacket(statusPacket)
-		}
 
-		// Log the packet if the match is in progress.
-		matchTimeSec := arena.MatchTimeSec()
-		if matchTimeSec > 0 && dsConn.log != nil {
-			dsConn.log.LogDsPacket(matchTimeSec, packetType, dsConn)
+			// Create a log entry if the match is in progress.
+			matchTimeSec := arena.MatchTimeSec()
+			if matchTimeSec > 0 && dsConn.log != nil {
+				dsConn.log.LogDsPacket(matchTimeSec, packetType, dsConn)
+			}
+		default:
+			log.Printf("Received unknown packet type %d from Team %d", packetType, dsConn.TeamId)
 		}
 	}
 }
