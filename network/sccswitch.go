@@ -1,4 +1,4 @@
-package main
+package network
 
 import (
 	"fmt"
@@ -110,16 +110,78 @@ func runSSHCommands(host, username, password string, commands []string) error {
 	return session.Wait()
 }
 
-func main() {
-	host := "10.0.100.48"   // Replace with the client's IP address or hostname
-	username := "admin" // Replace with the SSH username
-	password := "1234Five" // Replace with the SSH password
+func downredscc() {
+	host := "10.0.100.48"   // Client IP address
+	username := "admin" // SSH Username
+	password := "1234Five" // SSH Password
 
 	commands := []string{
 		"config terminal",
 		"interface range gigabitEthernet 1/2-4",
-		"shut",
-		"no shut",
+		"shutdown",
+		"exit",
+		"exit",
+	}
+
+	err := runSSHCommands(host, username, password, commands)
+	if err != nil {
+		log.Fatalf("Failed to run commands: %v", err)
+	}
+
+	fmt.Println("Successfully executed commands on", host)
+}
+
+func downbluescc() {
+	host := "10.0.100.49"   // Client IP address
+	username := "admin" // SSH Username
+	password := "1234Five" // SSH Password
+
+	commands := []string{
+		"config terminal",
+		"interface range gigabitEthernet 1/2-4",
+		"shutdown",
+		"exit",
+		"exit",
+	}
+
+	err := runSSHCommands(host, username, password, commands)
+	if err != nil {
+		log.Fatalf("Failed to run commands: %v", err)
+	}
+
+	fmt.Println("Successfully executed commands on", host)
+}
+
+func upredscc() {
+	host := "10.0.100.48"   // Client IP address
+	username := "admin" // SSH Username
+	password := "1234Five" // SSH Password
+
+	commands := []string{
+		"config terminal",
+		"interface range gigabitEthernet 1/2-4",
+		"no shutdown",
+		"exit",
+		"exit",
+	}
+
+	err := runSSHCommands(host, username, password, commands)
+	if err != nil {
+		log.Fatalf("Failed to run commands: %v", err)
+	}
+
+	fmt.Println("Successfully executed commands on", host)
+}
+
+func upbluescc() {
+	host := "10.0.100.49"   // Client IP address
+	username := "admin" // SSH Username
+	password := "1234Five" // SSH Password
+
+	commands := []string{
+		"config terminal",
+		"interface range gigabitEthernet 1/2-4",
+		"no shutdown",
 		"exit",
 		"exit",
 	}
