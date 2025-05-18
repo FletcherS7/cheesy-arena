@@ -11,6 +11,7 @@ require (
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/stretchr/testify v1.8.2
 	go.etcd.io/bbolt v1.3.7
+	golang.org/x/crypto/ssh v0.38.0
 )
 
 require (
