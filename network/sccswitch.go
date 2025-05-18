@@ -111,8 +111,8 @@ func runSSHCommands(host, username, password string, commands []string) error {
 }
 
 func Downredscc() {
-	host := "10.0.100.48"   // Client IP address
-	username := "admin" // SSH Username
+	host := "10.0.100.48"  // Client IP address
+	username := "admin"    // SSH Username
 	password := "1234Five" // SSH Password
 
 	commands := []string{
@@ -132,8 +132,8 @@ func Downredscc() {
 }
 
 func Downbluescc() {
-	host := "10.0.100.49"   // Client IP address
-	username := "admin" // SSH Username
+	host := "10.0.100.49"  // Client IP address
+	username := "admin"    // SSH Username
 	password := "1234Five" // SSH Password
 
 	commands := []string{
@@ -153,8 +153,8 @@ func Downbluescc() {
 }
 
 func Upredscc() {
-	host := "10.0.100.48"   // Client IP address
-	username := "admin" // SSH Username
+	host := "10.0.100.48"  // Client IP address
+	username := "admin"    // SSH Username
 	password := "1234Five" // SSH Password
 
 	commands := []string{
@@ -174,8 +174,8 @@ func Upredscc() {
 }
 
 func Upbluescc() {
-	host := "10.0.100.49"   // Client IP address
-	username := "admin" // SSH Username
+	host := "10.0.100.49"  // Client IP address
+	username := "admin"    // SSH Username
 	password := "1234Five" // SSH Password
 
 	commands := []string{
