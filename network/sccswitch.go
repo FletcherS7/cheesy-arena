@@ -110,7 +110,7 @@ func runSSHCommands(host, username, password string, commands []string) error {
 	return session.Wait()
 }
 
-func downredscc() {
+func Downredscc() {
 	host := "10.0.100.48"   // Client IP address
 	username := "admin" // SSH Username
 	password := "1234Five" // SSH Password
@@ -131,7 +131,7 @@ func downredscc() {
 	fmt.Println("Successfully executed commands on", host)
 }
 
-func downbluescc() {
+func Downbluescc() {
 	host := "10.0.100.49"   // Client IP address
 	username := "admin" // SSH Username
 	password := "1234Five" // SSH Password
@@ -152,7 +152,7 @@ func downbluescc() {
 	fmt.Println("Successfully executed commands on", host)
 }
 
-func upredscc() {
+func Upredscc() {
 	host := "10.0.100.48"   // Client IP address
 	username := "admin" // SSH Username
 	password := "1234Five" // SSH Password
@@ -173,7 +173,7 @@ func upredscc() {
 	fmt.Println("Successfully executed commands on", host)
 }
 
-func upbluescc() {
+func Upbluescc() {
 	host := "10.0.100.49"   // Client IP address
 	username := "admin" // SSH Username
 	password := "1234Five" // SSH Password
