@@ -27,7 +27,7 @@ func TestConfigureSwitch(t *testing.T) {
 		"interface Vlan40\nno ip address\nno ip dhcp pool dhcp40\n" +
 		"interface Vlan50\nno ip address\nno ip dhcp pool dhcp50\n" +
 		"interface Vlan60\nno ip address\nno ip dhcp pool dhcp60\n" +
-		"end\n\nexit\n"
+		"end\nexit\n"
 
 	// Should remove all previous VLANs and do nothing else if current configuration is blank.
 	mockTelnet(t, sw.port, &command1, &command2)
@@ -47,7 +47,7 @@ func TestConfigureSwitch(t *testing.T) {
 			"ip dhcp excluded-address 10.2.54.1 10.2.54.19\nip dhcp excluded-address 10.2.54.200 10.2.54.254\nip dhcp pool dhcp50\n"+
 			"network 10.2.54.0 255.255.255.0\ndefault-router 10.2.54.4\nlease 7\n"+
 			"interface Vlan50\nip address 10.2.54.4 255.255.255.0\n"+
-			"end\n\nexit\n",
+			"end\nexit\n",
 		command2,
 	)
 
@@ -80,7 +80,7 @@ func TestConfigureSwitch(t *testing.T) {
 			"ip dhcp excluded-address 10.15.38.1 10.15.38.19\nip dhcp excluded-address 10.15.38.200 10.15.38.254\nip dhcp pool dhcp60\n"+
 			"network 10.15.38.0 255.255.255.0\ndefault-router 10.15.38.4\nlease 7\n"+
 			"interface Vlan60\nip address 10.15.38.4 255.255.255.0\n"+
-			"end\n\nexit\n",
+			"end\nexit\n",
 		command2,
 	)
 }
