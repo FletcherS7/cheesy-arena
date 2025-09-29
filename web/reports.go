@@ -9,17 +9,16 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"math"
-	"net/http"
-	"sort"
-	"strconv"
-	"time"
-
 	"github.com/Team254/cheesy-arena/game"
 	"github.com/Team254/cheesy-arena/model"
 	"github.com/Team254/cheesy-arena/playoff"
 	"github.com/Team254/cheesy-arena/tournament"
 	"github.com/jung-kurt/gofpdf"
+	"math"
+	"net/http"
+	"sort"
+	"strconv"
+	"time"
 )
 
 // Generates a CSV-formatted report of the qualification rankings.
@@ -289,69 +288,45 @@ func (web *Web) couponsPdfReportHandler(w http.ResponseWriter, r *http.Request) 
 	pdf := gofpdf.New("P", "mm", "Letter", "font")
 	pdf.SetLineWidth(1)
 
-	alliances, err := web.arena.Database.GetAllAlliances()
-	if err != nil {
-		handleWebErr(w, err)
-		return
-	}
-	if len(alliances) == 0 {
-		handleWebErr(w, errors.New("playoff alliance coupons report is unavailable until alliances have been selected"))
-		return
-	}
-
 	eventName := web.arena.EventSettings.Name
+	numAlliances := web.arena.EventSettings.NumPlayoffAlliances
 
-	for page := 0; page < (len(alliances)+3)/4; page++ {
+	for page := 0; page < (numAlliances+3)/4; page++ {
 		heightAcc := cTopMargin
 		pdf.AddPage()
-		for i := page * 4; i < page*4+4 && i < len(alliances); i++ {
+		for i := page * 4; i < page*4+4 && i < numAlliances; i++ {
 			pdf.SetFillColor(220, 220, 220)
 
-			allianceCaptain := alliances[i].TeamIds[0]
-
 			pdf.RoundedRect(cSideMargin, float64(heightAcc), cWidth, cHeight, 4, "1234", "D")
-			timeoutX := cSideMargin + (cWidth * 0.5)
-			timeoutY := float64(heightAcc) + (cHeight * 0.5)
-			drawTimeoutCoupon(pdf, eventName, timeoutX, timeoutY, allianceCaptain, i+1)
+			couponX := cSideMargin + (cWidth * 0.5)
+			couponY := float64(heightAcc) + (cHeight * 0.5)
+			drawCoupon(pdf, eventName, couponX, couponY, i+1, "VAR Coupon")
 
 			pdf.RoundedRect(cWidth+cHPad+cSideMargin, float64(heightAcc), cWidth, cHeight, 4, "1234", "D")
-			backupX := cSideMargin + cWidth + cHPad + (cWidth * 0.5)
-			backupY := float64(heightAcc) + (cHeight * 0.5)
+			couponX = cSideMargin + cWidth + cHPad + (cWidth * 0.5)
+			couponY = float64(heightAcc) + (cHeight * 0.5)
 			heightAcc += cHeight + cVPad
-			drawBackupCoupon(pdf, eventName, backupX, backupY, allianceCaptain, i+1)
+			drawCoupon(pdf, eventName, couponX, couponY, i+1, "Backup Coupon")
 		}
 	}
 
 	// Write out the PDF file as the HTTP response.
 	w.Header().Set("Content-Type", "application/pdf")
-	err = pdf.Output(w)
-	if err != nil {
+	if err := pdf.Output(w); err != nil {
 		handleWebErr(w, err)
 		return
 	}
 }
 
-func drawTimeoutCoupon(pdf gofpdf.Pdf, eventName string, x float64, y float64, teamId int, allianceNumber int) {
+func drawCoupon(pdf gofpdf.Pdf, eventName string, x float64, y float64, allianceNumber int, text string) {
 	pdf.SetTextColor(0, 0, 0)
 	drawPdfLogo(pdf, x, y, cImgWidth)
 
 	pdf.SetFont("Arial", "B", 24)
-	drawCenteredText(pdf, "Timeout Coupon", x, y+10)
+	drawCenteredText(pdf, text, x, y+10)
 
 	pdf.SetFont("Arial", "", 14)
-	drawCenteredText(pdf, fmt.Sprintf("Alliance: %v    Captain: %v", allianceNumber, teamId), x, y+20)
-	drawEventWatermark(pdf, x, y, eventName)
-}
-
-func drawBackupCoupon(pdf gofpdf.Pdf, eventName string, x float64, y float64, teamId int, allianceNumber int) {
-	pdf.SetTextColor(0, 0, 0)
-	drawPdfLogo(pdf, x, y, cImgWidth)
-
-	pdf.SetFont("Arial", "B", 24)
-	drawCenteredText(pdf, "Backup Coupon", x, y+10)
-
-	pdf.SetFont("Arial", "", 14)
-	drawCenteredText(pdf, fmt.Sprintf("Alliance: %v    Captain: %v", allianceNumber, teamId), x, y+20)
+	drawCenteredText(pdf, fmt.Sprintf("Alliance: %v", allianceNumber), x, y+20)
 	drawEventWatermark(pdf, x, y, eventName)
 }
 
