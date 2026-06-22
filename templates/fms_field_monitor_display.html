@@ -99,19 +99,19 @@ Display showing robot connection status in the style of FMS Field Monitor.
   <div class="fms-team-stats" id="{{.side}}Team{{.position}}Stats">
     <div class="fms-stat-item">
       <div class="fms-stat-value" id="{{.side}}Team{{.position}}Battery">0.0V <span class="fms-stat-sub">Min 0.0</span></div>
-      <div class="fms-stat-label"><i class="bi bi-battery"></i> BATTERY</div>
+      <div class="fms-stat-label"><i class="bi bi-battery-half"></i> BATTERY</div>
     </div>
     <div class="fms-stat-item">
-      <div class="fms-stat-value" id="{{.side}}Team{{.position}}Bandwidth">0.000 Mbps</div>
-      <div class="fms-stat-label">LT BWU</div>
+      <div class="fms-stat-value" id="{{.side}}Team{{.position}}Bandwidth">-</div>
+      <div class="fms-stat-label"><i class="bi bi-arrow-down-up"></i> BWU</div>
     </div>
     <div class="fms-stat-item">
-      <div class="fms-stat-value" id="{{.side}}Team{{.position}}TripTime">0 ms</div>
-      <div class="fms-stat-label">TRIP <span class="fms-stat-sub">0 ms ago</span></div>
+      <div class="fms-stat-value" id="{{.side}}Team{{.position}}TripTime">-</div>
+      <div class="fms-stat-label"><i class="bi bi-pin-map"></i> TRIP <span class="fms-stat-sub">0 ms ago</span></div>
     </div>
     <div class="fms-stat-item">
-      <div class="fms-stat-value" id="{{.side}}Team{{.position}}MissedPackets">0</div>
-      <div class="fms-stat-label">PACKET LOSS</div>
+      <div class="fms-stat-value" id="{{.side}}Team{{.position}}MissedPackets">-</div>
+      <div class="fms-stat-label"><i class="bi bi-x"></i> PACKET LOSS</div>
     </div>
   </div>
 
