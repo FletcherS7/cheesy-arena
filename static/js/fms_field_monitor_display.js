@@ -158,7 +158,11 @@ const handleArenaStatus = function (data) {
       teamElement.attr("data-bypassed", "true");
       teamRobotElement.attr("data-status-ok", "");
       teamRobotElement.text("BYPASSED");
-    } else if (stationStatus.DsConn && !stationStatus.DsConn.DsLinked && stationStatus.Team) {
+    } else if (!stationStatus.Team) {
+      teamElement.attr("data-bypassed", "false");
+      teamRobotElement.attr("data-status-ok", "");
+      teamRobotElement.text("NO TEAM");
+    } else if (stationStatus.DsConn && !stationStatus.DsConn.DsLinked) {
       teamElement.attr("data-bypassed", "false");
       teamRobotElement.attr("data-status-ok", "");
       teamRobotElement.text("NOT READY");
@@ -166,14 +170,6 @@ const handleArenaStatus = function (data) {
       teamElement.attr("data-bypassed", "false");
       teamRobotElement.attr("data-status-ok", true);
       teamRobotElement.text("READY");
-    }
-
-    if (!stationStatus.Team) {
-      if (!stationStatus.Bypass) {
-        teamRobotElement.text("NO TEAM");
-        teamRobotElement.attr("data-status-ok", "");
-        teamElement.attr("data-bypassed", "false");
-      }
     }
   });
 };
@@ -233,10 +229,6 @@ $(function () {
   if (reversed) {
     redSide = "right";
     blueSide = "left";
-    $(".fms-team-header.left").attr("data-reversed", "true");
-    $(".fms-team-header.right").attr("data-reversed", "true");
-    $(".station-label-left").attr("data-reversed", "true");
-    $(".station-label-right").attr("data-reversed", "true");
   } else {
     redSide = "left";
     blueSide = "right";
