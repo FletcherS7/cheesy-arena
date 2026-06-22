@@ -58,6 +58,13 @@ body {
   color: #1976d2;
 }
 
+.fms-row[data-ds="true"] .right-column {
+  display: none;
+}
+.fms-row[data-ds="true"] .left-column {
+  width: 100%;
+}
+
 .fms-row {
   flex-grow: 1;
   display: flex;
@@ -276,6 +283,9 @@ body {
   border-radius: 4px;
 }
 .fms-team-notes[data-fta="false"] {
+  display: none;
+}
+.fms-team-notes[data-ds="true"] {
   display: none;
 }
 .fms-team-notes div {
