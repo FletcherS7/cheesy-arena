@@ -45,13 +45,13 @@ var defaultFixtureLayout = fixtureLayout{
 		// Facing Driver Station.
 		{redGoalSide1Bot, 1, 1},
 		{redGoalSide1Top, 1, 25},
-		// Facing Audience.
+		// Facing Scoring Table.
 		{redGoalSide2Bot, 1, 49},
 		{redGoalSide2Top, 1, 73},
 		// Facing Center.
 		{redGoalSide3Bot, 1, 97},
 		{redGoalSide3Top, 1, 121},
-		// Facing Scoring Table.
+		// Facing Audience.
 		{redGoalSide4Bot, 1, 145},
 		{redGoalSide4Top, 1, 169},
 	},
