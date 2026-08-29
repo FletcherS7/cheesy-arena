@@ -1,6 +1,5 @@
 // Copyright 2026 Team 254. All Rights Reserved.
-// Author: pat@patfairbank.com (Patrick Fairbank)
-//
+
 // Web handlers for unpicked teams display.
 
 package web

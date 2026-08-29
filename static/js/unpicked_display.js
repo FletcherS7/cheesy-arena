@@ -1,18 +1,15 @@
 // Copyright 2026 Team 254. All Rights Reserved.
-// Author: pat@patfairbank.com (Patrick Fairbank)
-//
+
 // Client-side methods for the unpicked teams display.
 
 $(function () {
   // Read the configuration for this display from the URL query string.
   const urlParams = new URLSearchParams(window.location.search);
 
-  // Refinement 1: Handle the inverted parameter
   if (urlParams.get("inverted") === "true") {
     $("#unpickedTeamsContainer").css("transform", "rotate(180deg)");
   }
 
-  // Refinement 2: Use better JS structure to manage empty state and reconnects
   const $unpickedTeams = $("#unpickedTeams");
   const $container = $("#unpickedTeamsContainer");
   const unpickedTeamsTemplate = Handlebars.compile($("#unpickedTeamsTemplate").html());
