@@ -11,7 +11,6 @@ import (
 	"log"
 	"net/http"
 	"strconv"
-	"time"
 
 	"github.com/Team254/cheesy-arena/field"
 	"github.com/Team254/cheesy-arena/game"
@@ -213,16 +212,6 @@ func (web *Web) refereePanelWebsocketHandler(w http.ResponseWriter, r *http.Requ
 			web.arena.SignalVolunteers()
 		case "signalReset":
 			web.arena.SignalReset()
-		case "fieldSafeToStart":
-			if web.arena.MatchState != field.PreMatch {
-				continue
-			}
-			web.arena.FieldSafeToStart = time.Now()
-		case "fieldNotSafeToStart":
-			if web.arena.MatchState != field.PreMatch {
-				continue
-			}
-			web.arena.FieldSafeToStart = time.Time{}
 		case "commitAndPost":
 			if web.arena.MatchState != field.PostMatch {
 				// Don't allow committing the fouls until the match is over.
