@@ -111,16 +111,19 @@ type Arena struct {
 }
 
 type AllianceStation struct {
-	DsConn       *DriverStationConnection
-	TeamMatchLog *TeamMatchLog
-	Ethernet     bool
-	AStop        bool
-	EStop        bool
-	Bypass       bool
-	Team         *model.Team
-	WifiStatus   network.TeamWifiStatus
-	aStopReset   bool
-	GameData     string
+	DsConn               *DriverStationConnection
+	TeamMatchLog         *TeamMatchLog
+	Ethernet             bool
+	AStop                bool
+	EStop                bool
+	Bypass               bool
+	Team                 *model.Team
+	WifiStatus           network.TeamWifiStatus
+	aStopReset           bool
+	GameData             string
+	TeamMismatch         bool
+	MoveToStation        string
+	lastTeamMismatchTime time.Time
 }
 
 // Creates the arena and sets it to its initial state.
@@ -979,6 +982,8 @@ func (arena *Arena) assignTeam(teamId int, station string) error {
 
 	// Force the A-stop to be reset by the new team if it is already pressed (if the PLC is enabled).
 	arena.AllianceStations[station].aStopReset = !arena.Plc.IsEnabled()
+	arena.AllianceStations[station].TeamMismatch = false
+	arena.AllianceStations[station].MoveToStation = ""
 
 	// Do nothing if the station is already assigned to the requested team.
 	dsConn := arena.AllianceStations[station].DsConn
@@ -986,6 +991,7 @@ func (arena *Arena) assignTeam(teamId int, station string) error {
 		return nil
 	}
 	if dsConn != nil {
+		dsConn.clearWrongStationMoveTo(arena)
 		dsConn.close()
 		arena.AllianceStations[station].Team = nil
 		arena.AllianceStations[station].DsConn = nil
@@ -1299,6 +1305,12 @@ func (arena *Arena) handlePlcInputOutput() {
 	arena.AllianceStations["B1"].Ethernet = blueEthernets[0]
 	arena.AllianceStations["B2"].Ethernet = blueEthernets[1]
 	arena.AllianceStations["B3"].Ethernet = blueEthernets[2]
+	for _, allianceStation := range arena.AllianceStations {
+		if !allianceStation.Ethernet {
+			allianceStation.TeamMismatch = false
+			allianceStation.MoveToStation = ""
+		}
+	}
 	arena.Plc.SetAwardsModeLight(arena.AllianceStationDisplayMode == "logo")
 
 	// Handle in-match PLC functions.

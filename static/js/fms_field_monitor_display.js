@@ -84,21 +84,28 @@ const handleArenaStatus = function (data) {
 
     const wifiStatus = stationStatus.WifiStatus;
     const dsConn = stationStatus.DsConn;
+    const localDsConn = (dsConn && !dsConn.WrongStation) ? dsConn : null;
     const expectedTeamId = stationStatus.Team ? stationStatus.Team.Id : 0;
+    const teamAlertTextElement = $(teamElementPrefix + "Alert .fms-station-alert-text");
+    const canShowStationAlert = !stationStatus.Bypass && !stationStatus.EStop && !stationStatus.AStop;
+
+    if (canShowStationAlert && stationStatus.TeamMismatch) {
+      teamElement.attr("data-station-alert", "true");
+      teamAlertTextElement.text("TEAM MISMATCH");
+    } else if (canShowStationAlert && stationStatus.MoveToStation && stationStatus.MoveToStation.length >= 2) {
+      teamElement.attr("data-station-alert", "true");
+      const color = stationStatus.MoveToStation[0] === "R" ? "RED " : "BLUE ";
+      teamAlertTextElement.text("MOVE TO " + color + stationStatus.MoveToStation[1]);
+    } else {
+      teamElement.attr("data-station-alert", "false");
+      teamAlertTextElement.text("");
+    }
 
     // DS Box
     teamDsElement.removeAttr("data-status-ok data-status-warning");
-    if (dsConn && dsConn.DsLinked) {
+    if (localDsConn && localDsConn.DsLinked) {
       teamDsElement.attr("data-status-ok", true);
       teamDsText.text("DS");
-    } else if (dsConn && dsConn.WrongStation) {
-      teamDsElement.attr("data-status-warning", true);
-      let moveText = "x WRONG DS";
-      if (dsConn.WrongStation.length >= 2) {
-        const color = dsConn.WrongStation[0] === "R" ? "RED " : "BLUE ";
-        moveText = "MOVE TO " + color + dsConn.WrongStation[1];
-      }
-      teamDsText.text(moveText);
     } else if (stationStatus.Ethernet) {
       teamDsElement.attr("data-status-warning", true);
       teamDsText.text("⚠ DS");
@@ -108,8 +115,8 @@ const handleArenaStatus = function (data) {
 
     // Radio Box
     const isRadioAssociated = (wifiStatus.TeamId === expectedTeamId && wifiStatus.RadioLinked);
-    const isRadioPingable = Boolean(dsConn && dsConn.RadioLinked);
-    const isRobotLinked = Boolean(dsConn && dsConn.RobotLinked);
+    const isRadioPingable = Boolean(localDsConn && localDsConn.RadioLinked);
+    const isRobotLinked = Boolean(localDsConn && localDsConn.RobotLinked);
     const radioAssociated = isRadioAssociated || isRobotLinked;
     const radioPingable = isRadioPingable || isRobotLinked;
 
@@ -144,7 +151,7 @@ const handleArenaStatus = function (data) {
       teamRioElement.attr("data-status-ok", true);
       teamRioText.text("RIO");
       teamRioIconElement.attr("class", "bi bi-cpu");
-    } else if (dsConn && dsConn.RioLinked) {
+    } else if (localDsConn && localDsConn.RioLinked) {
       teamRioElement.attr("data-status-warning", true);
       teamRioText.text(getDisconnectText("rio", station, trackDisconnect, "⚠ RIO"));
       teamRioIconElement.attr("class", "bi bi-cpu-fill");
@@ -157,7 +164,7 @@ const handleArenaStatus = function (data) {
     // Stats
     teamStatsElement.removeAttr("data-status-ok");
     let minBat = minBatteryTracker[station] || 99.9;
-    const batteryVoltage = dsConn ? dsConn.BatteryVoltage : 0.0;
+    const batteryVoltage = localDsConn ? localDsConn.BatteryVoltage : 0.0;
 
     if (isRobotLinked && batteryVoltage > 0) {
       if (batteryVoltage < minBat) {
@@ -178,15 +185,15 @@ const handleArenaStatus = function (data) {
       teamBatteryParent.removeAttr("data-status-ok");
     }
 
-    if (dsConn && wifiStatus.MBits >= 0.01) {
+    if (localDsConn && wifiStatus.MBits >= 0.01) {
       teamBandwidthElement.text(wifiStatus.MBits.toFixed(3) + " Mbps");
       if (isRobotLinked && wifiStatus.MBits >= highBtuThreshold) {
         teamBandwidthParent.attr("data-status-ok", false);
       } else {
         teamBandwidthParent.removeAttr("data-status-ok");
       }
-      teamTripTimeElement.text(dsConn.DsRobotTripTimeMs + " ms");
-      teamMissedPacketsElement.text(dsConn.MissedPacketCount);
+      teamTripTimeElement.text(localDsConn.DsRobotTripTimeMs + " ms");
+      teamMissedPacketsElement.text(localDsConn.MissedPacketCount);
     } else {
       teamBandwidthElement.text("0.000 Mbps");
       teamBandwidthParent.removeAttr("data-status-ok");
@@ -218,8 +225,8 @@ const handleArenaStatus = function (data) {
       teamRobotElement.text("NO TEAM");
     } else if (inMatch) {
       teamElement.attr("data-bypassed", "false");
-      const isAuto = dsConn ? dsConn.Auto : (matchStateText === "AUTONOMOUS");
-      const isEnabled = Boolean(dsConn && dsConn.Enabled);
+      const isAuto = localDsConn ? localDsConn.Auto : (matchStateText === "AUTONOMOUS");
+      const isEnabled = Boolean(localDsConn && localDsConn.Enabled);
 
       if (isAuto && isEnabled) {
         teamRobotElement.attr("data-robot-state", "auto");

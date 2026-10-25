@@ -119,6 +119,8 @@ body {
   .fms-status-text, .fms-team-notes { font-size: 1.6vw; }
   .fms-stat-value { font-size: 2vw; margin-bottom: 0.2vw; }
   .fms-stat-label, .fms-stat-sub { font-size: 1.2vw; }
+  .fms-station-alert { font-size: 4vw; padding: 2vw; gap: 1.5vw; }
+  .fms-station-alert i { font-size: 4.5vw; }
   
   #matchStatusRow { font-size: 2vw; }
   #eventStatusRow { font-size: 2.4vw; }
@@ -224,6 +226,40 @@ body {
 .fms-status-pill[data-robot-state="ready"] {
   background-color: #4caf50;
   color: white;
+}
+
+.fms-station-alert {
+  display: none;
+  flex: 70 70 0;
+  background-color: #fdd835;
+  border: 1px solid #c5a638;
+  border-radius: 5px;
+  color: #4a3500;
+  align-items: center;
+  justify-content: center;
+  gap: 0.8vw;
+  font-size: 2.2vw;
+  font-weight: bold;
+  text-transform: uppercase;
+  margin-top: 0.2vw;
+  margin-bottom: 0;
+  min-height: 0;
+  box-sizing: border-box;
+}
+
+.fms-station-alert i {
+  font-size: 2.5vw;
+  line-height: 1;
+}
+
+.fms-team[data-station-alert="true"] .fms-status-pill,
+.fms-team[data-station-alert="true"] .fms-team-status,
+.fms-team[data-station-alert="true"] .fms-team-stats {
+  display: none;
+}
+
+.fms-team[data-station-alert="true"] .fms-station-alert {
+  display: flex;
 }
 
 .fms-team-status {
