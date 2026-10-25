@@ -316,12 +316,12 @@ func TestTeamSign_TeamNumber(t *testing.T) {
 	allianceStation.Ethernet = true
 	assertSign(true, "  254", greenColor, "254         Start DS")
 	allianceStation.TeamMismatch = true
-	assertSign(true, "  254", greenColor, "254           Waiting")
+	assertSign(true, "  254", greenColor, "254          Waiting")
 	allianceStation.TeamMismatch = false
 	allianceStation.MoveToStation = "R2"
-	assertSign(true, "  254", greenColor, "254     Move to Red 2")
+	assertSign(true, "  254", greenColor, "254    Move to Red 2")
 	allianceStation.MoveToStation = "B3"
-	assertSign(true, "  254", greenColor, "254    Move to Blue 3")
+	assertSign(true, "  254", greenColor, "254   Move to Blue 3")
 	allianceStation.MoveToStation = "X9"
 	assertSign(true, "  254", greenColor, "254     Move Station")
 	allianceStation.MoveToStation = ""
@@ -337,10 +337,10 @@ func TestTeamSign_TeamNumber(t *testing.T) {
 	allianceStation.DsConn.RobotLinked = true
 	assertSign(true, "  254", redColor, "254            Ready")
 	allianceStation.TeamMismatch = true
-	assertSign(true, "  254", greenColor, "254           Waiting")
+	assertSign(true, "  254", greenColor, "254          Waiting")
 	allianceStation.TeamMismatch = false
 	allianceStation.MoveToStation = "B1"
-	assertSign(true, "  254", greenColor, "254    Move to Blue 1")
+	assertSign(true, "  254", greenColor, "254   Move to Blue 1")
 	allianceStation.MoveToStation = ""
 
 	arena.FieldReset = false

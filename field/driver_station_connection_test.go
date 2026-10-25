@@ -469,5 +469,4 @@ func TestListenForDriverStations_TeamMismatchAndMoveToStation(t *testing.T) {
 	assert.Equal(t, "R1", arena.resolveMismatchStation(nonFieldAddr))
 	arena.AllianceStations["B2"].Ethernet = true
 	assert.Equal(t, "", arena.resolveMismatchStation(nonFieldAddr))
-	}
 }
