@@ -1193,7 +1193,9 @@ func (arena *Arena) getAllianceStationStartConditions(stations ...string) []stri
 			aStopNotResetStations = append(aStopNotResetStations, station)
 		}
 		if !allianceStation.Bypass {
-			if allianceStation.DsConn == nil || !allianceStation.DsConn.RobotLinked {
+			if allianceStation.DsConn == nil || allianceStation.DsConn.WrongStation != "" ||
+				allianceStation.TeamMismatch || allianceStation.MoveToStation != "" ||
+				!allianceStation.DsConn.RobotLinked {
 				disconnectedStations = append(disconnectedStations, station)
 			}
 		}

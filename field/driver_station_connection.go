@@ -701,7 +701,7 @@ func (arena *Arena) handleInvalidTcpConnection(
 		}
 	}
 	defer func() {
-		if trackedStation != nil {
+		if trackedStation != nil && trackedStation.TeamMismatch {
 			mismatchTime := trackedStation.lastTeamMismatchTime
 			time.AfterFunc(2*time.Second, func() {
 				if trackedStation.TeamMismatch && trackedStation.lastTeamMismatchTime.Equal(mismatchTime) {
@@ -742,7 +742,7 @@ func (arena *Arena) handleInvalidTcpConnection(
 			log.Printf("Error reading from connection for invalid driver station: %v", err)
 			break
 		}
-		if trackedStation != nil {
+		if trackedStation != nil && trackedStation.TeamMismatch {
 			trackedStation.lastTeamMismatchTime = time.Now()
 		}
 	}
