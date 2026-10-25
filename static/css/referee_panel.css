@@ -9,7 +9,7 @@ html {
   overscroll-behavior: none;
 }
 body {
-  min-height: 100%;
+  height: 100%;
   background-color: #222;
   overscroll-behavior: none;
 }
@@ -22,7 +22,7 @@ h3 {
   padding: 1vh 1.5vw;
   width: 100%;
   max-width: none;
-  min-height: 100vh;
+  height: 100vh;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -42,13 +42,14 @@ h3 {
 #refereePanel {
   width: 100%;
   flex: 1;
+  min-height: 0;
   display: flex;
   flex-direction: row;
   align-items: stretch;
   gap: 2vw;
 }
 #cards {
-  width: clamp(150px, 16vw, 240px);
+  width: clamp(165px, 17vw, 250px);
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
@@ -93,13 +94,14 @@ h3 {
   display: flex;
   justify-content: center;
   align-items: center;
+  border: 0.3vw solid transparent;
   border-radius: 0.4vw;
+  cursor: pointer;
 }
 .playoff-alliance-card {
   font-size: clamp(1.1rem, 1.6vw, 1.8rem);
   white-space: nowrap;
   color: inherit;
-  border: 0;
 }
 .team-card[data-card="yellow"] {
   background-color: #c90;
@@ -139,6 +141,7 @@ h3 {
   align-items: center;
   flex: 1;
   min-width: 0;
+  min-height: 0;
 }
 #foulButtons {
   width: 100%;
@@ -157,6 +160,7 @@ h3 {
   text-align: center;
   line-height: 1.1;
   border-radius: 0.8vw;
+  cursor: pointer;
 }
 .red-foul {
   background-color: #933;
@@ -167,7 +171,10 @@ h3 {
 #foulList {
   width: 100%;
   flex: 1;
+  min-height: 0;
+  overflow-y: auto;
   margin: 1.2vh 0;
+  padding-right: 0.3vw;
   display: flex;
   flex-direction: column;
   gap: 1vh;
@@ -175,6 +182,7 @@ h3 {
 .foul {
   width: 100%;
   min-height: clamp(48px, 6.5vh, 72px);
+  flex-shrink: 0;
   padding: 0.6vh 1vw;
   display: flex;
   flex-direction: row;
@@ -197,6 +205,7 @@ h3 {
   align-items: center;
   background-color: rgba(255, 255, 255, 0.1);
   border-radius: 0.3vw;
+  cursor: pointer;
 }
 .team-buttons {
   display: flex;
@@ -210,19 +219,23 @@ h3 {
   display: flex;
   justify-content: center;
   align-items: center;
+  border: solid 0.2vw transparent;
   border-radius: 0.3vw;
+  cursor: pointer;
 }
 .team-button[data-selected="true"] {
-  border: solid 0.2vw #fff;
+  border-color: #fff;
 }
 .rule-select {
   flex: 1;
   min-width: 0;
   height: clamp(36px, 4.8vh, 54px);
   padding: 0 0.5vw;
-  background-color: rgba(0, 0, 0, 0.1);
+  background-color: rgba(0, 0, 0, 0.15);
+  color: #fff;
   border: 0;
   border-radius: 0.3vw;
+  text-overflow: ellipsis;
 }
 .rule-select option {
   background-color: #222;
@@ -237,6 +250,7 @@ h3 {
   align-items: center;
   background-color: #444;
   border-radius: 0.3vw;
+  cursor: pointer;
 }
 #controlButtons {
   width: 100%;
@@ -258,6 +272,7 @@ h3 {
   align-items: center;
   border-radius: 0.4vw;
   opacity: 0.3;
+  cursor: pointer;
 }
 .control-button[data-enabled=true] {
   opacity: 1;
@@ -278,8 +293,8 @@ h3 {
 #scoreSummary {
   width: 100%;
   display: flex;
-  gap: 2vw;
-  padding: 0.5vh 0 1.5vh 0;
+  gap: 1.5vw;
+  padding: 0.4vh 0 1.2vh 0;
   justify-content: space-between;
   text-align: center;
 }
@@ -294,7 +309,21 @@ h3 {
   column-gap: 0.6vw;
   row-gap: 0.5vh;
   align-items: center;
+  padding: 0.6vh 0.8vw;
+  border: 1px solid #666;
+  border-radius: 0.6vw;
   font-size: clamp(0.95rem, 1.25vw, 1.4rem);
+}
+#blueScoreSummary {
+  background-color: #223;
+}
+#redScoreSummary {
+  background-color: #322;
+}
+#scoreSummary .team-1,
+#scoreSummary .team-2,
+#scoreSummary .team-3 {
+  font-weight: 600;
 }
 
 #scoreSummary .placeholder {
