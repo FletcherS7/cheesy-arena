@@ -1153,7 +1153,7 @@ func (arena *Arena) getStartMatchConditions() []string {
 		if arena.Plc.GetFieldEStop() {
 			conditions = append(conditions, "field emergency stop is active")
 		}
-		if !arena.Plc.IsFtaReady() {
+		if arena.EventSettings.FtaReadySwitchRequired && !arena.Plc.IsFtaReady() {
 			conditions = append(conditions, "FTA ready switch is not active")
 		}
 		var disconnectedArmorBlocks []string

@@ -92,6 +92,9 @@ func TestArenaCheckCanStartMatch(t *testing.T) {
 	var plc FakePlc
 	plc.isEnabled = true
 	arena.Plc = &plc
+	assert.Nil(t, arena.checkCanStartMatch())
+
+	arena.EventSettings.FtaReadySwitchRequired = true
 	err = arena.checkCanStartMatch()
 	if assert.NotNil(t, err) {
 		assert.Contains(t, err.Error(), "cannot start match: FTA ready switch is not active")
